@@ -12,21 +12,7 @@ Add this flake to your `flake.nix` inputs:
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    distrobox-flake.url = "path:/path/to/distrobox-flake";
-  };
-
-  outputs = { nixpkgs, home-manager, distrobox-flake, ... }: {
-    homeConfigurations.youruser = home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      modules = [
-        distrobox-flake.homeManagerModules.distrobox
-        ./home.nix
-      ];
-    };
+    distrobox-flake.url = "github:AniviaFlome/distrobox-flake";
   };
 }
 ```

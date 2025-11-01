@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
@@ -6,12 +11,18 @@ let
   cfg = config.programs.distrobox-flake;
 
   # Supported distributions
-  supportedDistros = [ "arch" "ubuntu" "debian" "fedora" "opensuse" "alpine" ];
+  supportedDistros = [
+    "arch"
+    "ubuntu"
+    "debian"
+    "fedora"
+    "opensuse"
+    "alpine"
+  ];
 
   # Map distro to package manager
   distroToPackageManager = {
     arch = "pacman";
-    ubuntu = "apt";
     debian = "apt";
     fedora = "dnf";
     opensuse = "zypper";
@@ -19,113 +30,139 @@ let
   };
 
   # Container configuration type
-  containerType = types.submodule ({ name, config, ... }: {
-    options = {
-      name = mkOption {
-        type = types.str;
-        default = name;
-        description = "Name of the distrobox container";
-      };
+  containerType = types.submodule (
+    { name, ... }:
+    {
+      options = {
+        name = mkOption {
+          type = types.str;
+          default = name;
+          description = "Name of the distrobox container";
+        };
 
-      distro = mkOption {
-        type = types.enum supportedDistros;
-        description = "Distribution type for the container";
-        example = "arch";
-      };
+        distro = mkOption {
+          type = types.enum supportedDistros;
+          description = "Distribution type for the container";
+          example = "arch";
+        };
 
-      image = mkOption {
-        type = types.str;
-        description = "Container image to use (e.g., 'archlinux:latest', 'ubuntu:22.04')";
-      };
+        image = mkOption {
+          type = types.str;
+          description = "Container image to use (e.g., 'archlinux:latest', 'ubuntu:22.04')";
+        };
 
-      packages = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "List of packages to install in the container";
-        example = [ "vim" "git" "htop" ];
-      };
+        packages = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          description = "List of packages to install in the container";
+          example = [
+            "vim"
+            "git"
+            "htop"
+          ];
+        };
 
-      aurPackages = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "List of AUR packages to install (Arch Linux only, uses paru)";
-        example = [ "paru-bin" "visual-studio-code-bin" ];
-      };
+        aurPackages = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          description = "List of AUR packages to install (Arch Linux only, uses paru)";
+          example = [
+            "paru-bin"
+            "visual-studio-code-bin"
+          ];
+        };
 
-      coprRepos = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "List of COPR repositories to enable (Fedora only)";
-        example = [ "atim/starship" ];
-      };
+        coprRepos = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          description = "List of COPR repositories to enable (Fedora only)";
+          example = [ "atim/starship" ];
+        };
 
-      autoUpdate = mkOption {
-        type = types.bool;
-        default = false;
-        description = "Whether to update the container on each rebuild";
-      };
+        autoUpdate = mkOption {
+          type = types.bool;
+          default = false;
+          description = "Whether to update the container on each rebuild";
+        };
 
-      preInstall = mkOption {
-        type = types.lines;
-        default = "";
-        description = "Commands to run before installing packages";
-      };
+        preInstall = mkOption {
+          type = types.lines;
+          default = "";
+          description = "Commands to run before installing packages";
+        };
 
-      postInstall = mkOption {
-        type = types.lines;
-        default = "";
-        description = "Commands to run after installing packages";
-      };
+        postInstall = mkOption {
+          type = types.lines;
+          default = "";
+          description = "Commands to run after installing packages";
+        };
 
-      initHook = mkOption {
-        type = types.lines;
-        default = "";
-        description = "Additional initialization commands";
-      };
+        initHook = mkOption {
+          type = types.lines;
+          default = "";
+          description = "Additional initialization commands";
+        };
 
-      additionalFlags = mkOption {
-        type = types.listOf types.str;
-        default = [];
-        description = "Additional flags to pass to distrobox create";
-        example = [ "--home" "$HOME/distrobox/ubuntu" ];
+        additionalFlags = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          description = "Additional flags to pass to distrobox create";
+          example = [
+            "--home"
+            "$HOME/distrobox/ubuntu"
+          ];
+        };
       };
-    };
-  });
+    }
+  );
 
   # Get package manager from distro
   getPackageManager = distro: distroToPackageManager.${distro};
 
   # Generate update command for a package manager
-  getUpdateCommand = pm:
-    if pm == "pacman" then "pacman -Syu --noconfirm"
-    else if pm == "apt" then "apt-get update && apt-get upgrade -y"
-    else if pm == "dnf" then "dnf upgrade -y"
-    else if pm == "zypper" then "zypper update -y"
-    else if pm == "apk" then "apk upgrade"
-    else "echo 'Unknown package manager: ${pm}'";
+  getUpdateCommand =
+    pm:
+    if pm == "pacman" then
+      "pacman -Syu --noconfirm > /dev/null"
+    else if pm == "apt" then
+      "apt update && apt upgrade -y > /dev/null"
+    else if pm == "dnf" then
+      "dnf upgrade -y > /dev/null"
+    else if pm == "zypper" then
+      "zypper update -y > /dev/null"
+    else if pm == "apk" then
+      "apk upgrade > /dev/null"
+    else
+      "echo 'Unknown package manager: ${pm}'";
 
   # Generate install command for a package manager (without system update)
-  getInstallCommand = pm: packages:
+  getInstallCommand =
+    pm: packages:
     let
       pkgList = concatStringsSep " " packages;
     in
-      if pm == "pacman" then "pacman -S --noconfirm ${pkgList}"
-      else if pm == "apt" then "apt install -y ${pkgList}"
-      else if pm == "dnf" then "dnf install -y ${pkgList}"
-      else if pm == "zypper" then "zypper install -y ${pkgList}"
-      else if pm == "apk" then "apk add ${pkgList}"
-      else "echo 'Unknown package manager: ${pm}'";
+    if pm == "pacman" then
+      "pacman -S --noconfirm ${pkgList}"
+    else if pm == "apt" then
+      "apt install -y ${pkgList}"
+    else if pm == "dnf" then
+      "dnf install -y ${pkgList}"
+    else if pm == "zypper" then
+      "zypper install -y ${pkgList}"
+    else if pm == "apk" then
+      "apk add ${pkgList}"
+    else
+      "echo 'Unknown package manager: ${pm}'";
 
   # Generate setup script for a single container
-  generateContainerScript = name: container:
+  generateContainerScript =
+    name: container:
     let
       pm = getPackageManager container.distro;
-      installCmd = if container.packages != [] 
-                   then getInstallCommand pm container.packages 
-                   else "";
+      installCmd = if container.packages != [ ] then getInstallCommand pm container.packages else "";
       updateCmd = getUpdateCommand pm;
       flags = concatStringsSep " " container.additionalFlags;
-      
+
       # Paru AUR helper installation script
       paruInstall = ''
         if ! command -v paru &> /dev/null; then
@@ -139,16 +176,18 @@ let
           rm -rf paru
         fi
       '';
-      
+
       # AUR packages installation
-      aurInstallCmd = if container.aurPackages != [] then
-        "paru -S --noconfirm ${concatStringsSep " " container.aurPackages}"
-      else "";
-      
+      aurInstallCmd =
+        if container.aurPackages != [ ] then
+          "paru -S --noconfirm ${concatStringsSep " " container.aurPackages}"
+        else
+          "";
+
       # COPR repo setup
-      coprSetup = concatStringsSep "\n" (map (repo: 
-        "sudo dnf copr enable -y ${repo}"
-      ) container.coprRepos);
+      coprSetup = concatStringsSep "\n" (
+        map (repo: "sudo dnf copr enable -y ${repo}") container.coprRepos
+      );
     in
     pkgs.writeShellScript "distrobox-setup-${name}" ''
       set -euo pipefail
@@ -180,7 +219,7 @@ let
       ''}
 
       # Enable COPR repos for Fedora
-      ${optionalString (container.coprRepos != [] && pm == "dnf") ''
+      ${optionalString (container.coprRepos != [ ] && pm == "dnf") ''
         echo "==> Enabling COPR repositories: ${concatStringsSep ", " container.coprRepos}"
         ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '
           ${coprSetup}
@@ -188,9 +227,9 @@ let
       ''}
 
       # Install regular packages if any are specified
-      ${optionalString (container.packages != []) ''
+      ${optionalString (container.packages != [ ]) ''
         echo "==> Installing packages in ${container.name}: ${concatStringsSep ", " container.packages}"
-        
+
         # Run pre-install commands
         ${optionalString (container.preInstall != "") ''
           echo "==> Running pre-install commands"
@@ -208,7 +247,7 @@ let
       ''}
 
       # Install AUR packages for Arch Linux
-      ${optionalString (container.aurPackages != [] && pm == "pacman") ''
+      ${optionalString (container.aurPackages != [ ] && pm == "pacman") ''
         echo "==> Installing AUR packages: ${concatStringsSep ", " container.aurPackages}"
         ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '
           ${paruInstall}
@@ -222,13 +261,15 @@ let
   # Generate main activation script
   activationScript = pkgs.writeShellScript "distrobox-activation" ''
     set -euo pipefail
-    
+
     echo "==> Starting distrobox container setup"
-    
-    ${concatStringsSep "\n" (mapAttrsToList (name: container: ''
-      ${generateContainerScript name container}
-    '') cfg.containers)}
-    
+
+    ${concatStringsSep "\n" (
+      mapAttrsToList (name: container: ''
+        ${generateContainerScript name container}
+      '') cfg.containers
+    )}
+
     echo "==> All distrobox containers configured"
   '';
 
@@ -239,7 +280,7 @@ in
 
     containers = mkOption {
       type = types.attrsOf containerType;
-      default = {};
+      default = { };
       description = "Distrobox containers to manage";
       example = literalExpression ''
         {
@@ -274,10 +315,13 @@ in
     }) cfg.containers;
 
     # Ensure distrobox and podman are available
-    home.packages = [ pkgs.distrobox pkgs.podman ];
+    home.packages = [
+      pkgs.distrobox
+      pkgs.podman
+    ];
 
     # Run activation script on home-manager switch
-    home.activation.distrobox = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    home.activation.distrobox = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       export PATH="${pkgs.podman}/bin:${pkgs.distrobox}/bin:${pkgs.gawk}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.util-linux}/bin:$PATH"
       ${activationScript} > /dev/null
     '';
