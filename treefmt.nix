@@ -1,9 +1,9 @@
-{ pkgs, ... }:
+_:
 
 {
   # Used for `nix fmt`
   projectRootFile = "flake.nix";
-  
+
   programs = {
     nixfmt.enable = true;
     statix.enable = true;

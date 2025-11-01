@@ -51,19 +51,19 @@ The simplest way to use this module:
 
 Each container accepts the following options:
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `name` | string | attribute name | Name of the container |
-| `distro` | enum | required | Distribution type: `arch`, `ubuntu`, `debian`, `fedora`, `centos`, `opensuse`, `alpine` |
-| `image` | string | required | Container image (e.g., `archlinux:latest`) |
-| `packages` | list of strings | `[]` | Packages to install |
-| `aurPackages` | list of strings | `[]` | AUR packages to install (Arch only, uses paru) |
-| `coprRepos` | list of strings | `[]` | COPR repos to enable (Fedora only) |
-| `autoUpdate` | bool | `false` | Update container on each rebuild |
-| `preInstall` | lines | `""` | Commands to run before package installation |
-| `postInstall` | lines | `""` | Commands to run after package installation |
-| `initHook` | lines | `""` | Commands to run during container initialization |
-| `additionalFlags` | list of strings | `[]` | Extra flags for `distrobox create` |
+| Option            | Type            | Default        | Description                                                                             |
+| ----------------- | --------------- | -------------- | --------------------------------------------------------------------------------------- |
+| `name`            | string          | attribute name | Name of the container                                                                   |
+| `distro`          | enum            | required       | Distribution type: `arch`, `ubuntu`, `debian`, `fedora`, `centos`, `opensuse`, `alpine` |
+| `image`           | string          | required       | Container image (e.g., `archlinux:latest`)                                              |
+| `packages`        | list of strings | `[]`           | Packages to install                                                                     |
+| `aurPackages`     | list of strings | `[]`           | AUR packages to install (Arch only, uses paru)                                          |
+| `coprRepos`       | list of strings | `[]`           | COPR repos to enable (Fedora only)                                                      |
+| `autoUpdate`      | bool            | `false`        | Update container on each rebuild                                                        |
+| `preInstall`      | lines           | `""`           | Commands to run before package installation                                             |
+| `postInstall`     | lines           | `""`           | Commands to run after package installation                                              |
+| `initHook`        | lines           | `""`           | Commands to run during container initialization                                         |
+| `additionalFlags` | list of strings | `[]`           | Extra flags for `distrobox create`                                                      |
 
 ### Supported Distributions
 
@@ -142,6 +142,7 @@ nix-shell
 ```
 
 This provides:
+
 - `nixpkgs-fmt` - Nix code formatter
 - `nil` - Nix LSP server
 - `treefmt` - Multi-language formatter
