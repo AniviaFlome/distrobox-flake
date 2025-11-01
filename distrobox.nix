@@ -273,11 +273,12 @@ in
       message = "Container '${name}' has unsupported distro '${container.distro}'. Supported distros: ${concatStringsSep ", " supportedDistros}";
     }) cfg.containers;
 
-    # Ensure distrobox is available
-    home.packages = [ pkgs.distrobox ];
+    # Ensure distrobox and podman are available
+    home.packages = [ pkgs.distrobox pkgs.podman ];
 
     # Run activation script on home-manager switch
     home.activation.distrobox = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      export PATH="${pkgs.podman}/bin:${pkgs.distrobox}/bin:$PATH"
       ${activationScript}
     '';
   };
