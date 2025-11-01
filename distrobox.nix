@@ -3,7 +3,7 @@
 with lib;
 
 let
-  cfg = config.programs.distrobox;
+  cfg = config.programs.distrobox-flake;
 
   # Supported distributions
   supportedDistros = [ "arch" "ubuntu" "debian" "fedora" "opensuse" "alpine" ];
@@ -234,7 +234,7 @@ let
 
 in
 {
-  options.programs.distrobox = {
+  options.programs.distrobox-flake = {
     enable = mkEnableOption "distrobox container management";
 
     containers = mkOption {

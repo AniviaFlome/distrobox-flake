@@ -4,21 +4,9 @@ pkgs.mkShell {
   name = "distrobox-flake-dev";
 
   buildInputs = with pkgs; [
-    # Nix development tools
-    nixpkgs-fmt
-    nil # Nix LSP
-    
-    # Code formatting
     treefmt
-    shfmt
-    nodePackages.prettier
-    
-    # Testing and utilities
     distrobox
     podman
-    
-    # Documentation
-    mdbook
   ];
 
   shellHook = ''
