@@ -279,7 +279,7 @@ in
     # Run activation script on home-manager switch
     home.activation.distrobox = lib.hm.dag.entryAfter ["writeBoundary"] ''
       export PATH="${pkgs.podman}/bin:${pkgs.distrobox}/bin:${pkgs.gawk}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.util-linux}/bin:$PATH"
-      ${activationScript}
+      ${activationScript} > /dev/null
     '';
   };
 }
