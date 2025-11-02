@@ -116,6 +116,9 @@ let
     }
   );
 
+  # State directory for tracking installed packages
+  stateDir = "${config.home.homeDirectory}/.local/distrobox-flake";
+
   # Get package manager from distro
   getPackageManager = distro: distroToPackageManager.${distro};
 
@@ -154,6 +157,25 @@ let
     else
       "echo 'Unknown package manager: ${pm}'";
 
+  # Generate remove command for a package manager
+  getRemoveCommand =
+    pm: packages:
+    let
+      pkgList = concatStringsSep " " packages;
+    in
+    if pm == "pacman" then
+      "pacman -Rs --noconfirm ${pkgList}"
+    else if pm == "apt" then
+      "apt remove -y ${pkgList}"
+    else if pm == "dnf" then
+      "dnf remove -y ${pkgList}"
+    else if pm == "zypper" then
+      "zypper remove -y ${pkgList}"
+    else if pm == "apk" then
+      "apk del ${pkgList}"
+    else
+      "echo 'Unknown package manager: ${pm}'";
+
   # Generate setup script for a single container
   generateContainerScript =
     name: container:
@@ -162,6 +184,14 @@ let
       installCmd = if container.packages != [ ] then getInstallCommand pm container.packages else "";
       updateCmd = getUpdateCommand pm;
       flags = concatStringsSep " " container.additionalFlags;
+
+      # State files for tracking packages
+      packagesStateFile = "${stateDir}/${name}-packages.txt";
+      aurPackagesStateFile = "${stateDir}/${name}-aur-packages.txt";
+
+      # Current packages as newline-separated string
+      currentPackages = concatStringsSep "\n" container.packages;
+      currentAurPackages = concatStringsSep "\n" container.aurPackages;
 
       # Paru AUR helper installation script
       paruInstall = ''
@@ -192,85 +222,104 @@ let
     pkgs.writeShellScript "distrobox-setup-${name}" ''
       set -euo pipefail
 
-      echo "==> Setting up distrobox container: ${container.name}"
+      # Ensure state directory exists
+      mkdir -p "${stateDir}"
 
       # Check if container exists
       if ! ${pkgs.distrobox}/bin/distrobox list | grep -q "^${container.name}"; then
-        echo "==> Creating container ${container.name} with image ${container.image}"
         ${pkgs.distrobox}/bin/distrobox create \
           --name "${container.name}" \
           --image "${container.image}" \
           ${flags} \
-          --yes
-      else
-        echo "==> Container ${container.name} already exists"
+          --yes > /dev/null 2>&1
       fi
 
       # Update container if autoUpdate is enabled
       ${optionalString container.autoUpdate ''
-        echo "==> Updating container ${container.name}"
-        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${updateCmd}'
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${updateCmd}' > /dev/null 2>&1
       ''}
 
       # Run initialization hook if provided
       ${optionalString (container.initHook != "") ''
-        echo "==> Running init hook for ${container.name}"
-        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.initHook}'
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.initHook}' > /dev/null 2>&1
       ''}
 
       # Enable COPR repos for Fedora
       ${optionalString (container.coprRepos != [ ] && pm == "dnf") ''
-        echo "==> Enabling COPR repositories: ${concatStringsSep ", " container.coprRepos}"
         ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '
           ${coprSetup}
-        '
+        ' > /dev/null 2>&1
       ''}
+
+      # Handle package removal (compare with previous state)
+      if [ -f "${packagesStateFile}" ]; then
+        # Get packages that were previously installed but are now removed
+        REMOVED_PACKAGES=$(comm -23 \
+          <(sort "${packagesStateFile}") \
+          <(echo "${currentPackages}" | sort))
+
+        if [ -n "$REMOVED_PACKAGES" ]; then
+          REMOVE_CMD="${getRemoveCommand pm "$REMOVED_PACKAGES"}"
+          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c "$REMOVE_CMD" > /dev/null 2>&1 || true
+        fi
+      fi
 
       # Install regular packages if any are specified
       ${optionalString (container.packages != [ ]) ''
-        echo "==> Installing packages in ${container.name}: ${concatStringsSep ", " container.packages}"
-
         # Run pre-install commands
         ${optionalString (container.preInstall != "") ''
-          echo "==> Running pre-install commands"
-          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.preInstall}'
+          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.preInstall}' > /dev/null 2>&1
         ''}
 
         # Install packages
-        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${installCmd}'
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${installCmd}' > /dev/null 2>&1
 
         # Run post-install commands
         ${optionalString (container.postInstall != "") ''
-          echo "==> Running post-install commands"
-          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.postInstall}'
+          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.postInstall}' > /dev/null 2>&1
         ''}
+      ''}
+
+      # Update package state file
+      echo "${currentPackages}" > "${packagesStateFile}"
+
+      # Handle AUR package removal for Arch Linux
+      ${optionalString (pm == "pacman") ''
+        if [ -f "${aurPackagesStateFile}" ]; then
+          # Get AUR packages that were previously installed but are now removed
+          REMOVED_AUR_PACKAGES=$(comm -23 \
+            <(sort "${aurPackagesStateFile}") \
+            <(echo "${currentAurPackages}" | sort))
+
+          if [ -n "$REMOVED_AUR_PACKAGES" ]; then
+            ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- paru -Rs --noconfirm $REMOVED_AUR_PACKAGES > /dev/null 2>&1 || true
+          fi
+        fi
       ''}
 
       # Install AUR packages for Arch Linux
       ${optionalString (container.aurPackages != [ ] && pm == "pacman") ''
-        echo "==> Installing AUR packages: ${concatStringsSep ", " container.aurPackages}"
         ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '
           ${paruInstall}
           ${aurInstallCmd}
-        '
+        ' > /dev/null 2>&1
       ''}
 
-      echo "==> Container ${container.name} setup complete"
+      # Update AUR package state file
+      ${optionalString (pm == "pacman") ''
+        echo "${currentAurPackages}" > "${aurPackagesStateFile}"
+      ''}
     '';
 
   # Generate main activation script
   activationScript = pkgs.writeShellScript "distrobox-activation" ''
     set -euo pipefail
 
-    echo "==> Starting distrobox container setup"
-
     ${concatStringsSep "\n" (
       mapAttrsToList (name: container: ''
         ${generateContainerScript name container}
       '') cfg.containers
     )}
-
-    echo "==> All distrobox containers configured"
   '';
 
 in
