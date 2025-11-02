@@ -231,24 +231,24 @@ let
           --name "${container.name}" \
           --image "${container.image}" \
           ${flags} \
-          --yes > /dev/null 2>&1
+          --yes
       fi
 
       # Update container if autoUpdate is enabled
       ${optionalString container.autoUpdate ''
-        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${updateCmd}' > /dev/null 2>&1
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${updateCmd}'
       ''}
 
       # Run initialization hook if provided
       ${optionalString (container.initHook != "") ''
-        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.initHook}' > /dev/null 2>&1
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.initHook}'
       ''}
 
       # Enable COPR repos for Fedora
       ${optionalString (container.coprRepos != [ ] && pm == "dnf") ''
         ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '
           ${coprSetup}
-        ' > /dev/null 2>&1
+        '
       ''}
 
       # Handle package removal (compare with previous state)
@@ -259,8 +259,20 @@ let
           <(echo "${currentPackages}" | sort))
 
         if [ -n "$REMOVED_PACKAGES" ]; then
-          REMOVE_CMD="${getRemoveCommand pm "$REMOVED_PACKAGES"}"
-          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c "$REMOVE_CMD" > /dev/null 2>&1 || true
+          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c "${
+            if pm == "pacman" then
+              "pacman -Rs --noconfirm"
+            else if pm == "apt" then
+              "apt remove -y"
+            else if pm == "dnf" then
+              "dnf remove -y"
+            else if pm == "zypper" then
+              "zypper remove -y"
+            else if pm == "apk" then
+              "apk del"
+            else
+              "echo 'Unknown package manager'"
+          } $REMOVED_PACKAGES" || true
         fi
       fi
 
@@ -268,15 +280,15 @@ let
       ${optionalString (container.packages != [ ]) ''
         # Run pre-install commands
         ${optionalString (container.preInstall != "") ''
-          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.preInstall}' > /dev/null 2>&1
+          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.preInstall}'
         ''}
 
         # Install packages
-        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${installCmd}' > /dev/null 2>&1
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '${installCmd}'
 
         # Run post-install commands
         ${optionalString (container.postInstall != "") ''
-          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.postInstall}' > /dev/null 2>&1
+          ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.postInstall}'
         ''}
       ''}
 
@@ -292,7 +304,7 @@ let
             <(echo "${currentAurPackages}" | sort))
 
           if [ -n "$REMOVED_AUR_PACKAGES" ]; then
-            ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- paru -Rs --noconfirm $REMOVED_AUR_PACKAGES > /dev/null 2>&1 || true
+            ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- paru -Rs --noconfirm $REMOVED_AUR_PACKAGES || true
           fi
         fi
       ''}
@@ -302,7 +314,7 @@ let
         ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '
           ${paruInstall}
           ${aurInstallCmd}
-        ' > /dev/null 2>&1
+        '
       ''}
 
       # Update AUR package state file
@@ -372,7 +384,7 @@ in
     # Run activation script on home-manager switch
     home.activation.distrobox = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       export PATH="${pkgs.podman}/bin:${pkgs.distrobox}/bin:${pkgs.gawk}/bin:${pkgs.gnused}/bin:${pkgs.gnugrep}/bin:${pkgs.util-linux}/bin:$PATH"
-      ${activationScript} > /dev/null
+      ${activationScript} > /dev/null 2>&1
     '';
   };
 }
