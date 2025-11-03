@@ -79,6 +79,22 @@ let
           example = [ "atim/starship" ];
         };
 
+        fedora = mkOption {
+          type = types.submodule {
+            options = {
+              rpmfusion = {
+                enable = mkOption {
+                  type = types.bool;
+                  default = false;
+                  description = "Enable RPM Fusion repositories (free and nonfree) for Fedora containers";
+                };
+              };
+            };
+          };
+          default = { };
+          description = "Fedora-specific options";
+        };
+
         autoUpdate = mkOption {
           type = types.bool;
           default = false;
@@ -145,7 +161,7 @@ let
       pkgList = concatStringsSep " " packages;
     in
     if pm == "pacman" then
-      "pacman -S --noconfirm ${pkgList}"
+      "pacman -S --needed --noconfirm ${pkgList}"
     else if pm == "apt" then
       "apt install -y ${pkgList}"
     else if pm == "dnf" then
@@ -189,16 +205,21 @@ let
       packagesStateFile = "${stateDir}/${name}-packages.txt";
       aurPackagesStateFile = "${stateDir}/${name}-aur-packages.txt";
       imageStateFile = "${stateDir}/${name}-image.txt";
+      coprReposStateFile = "${stateDir}/${name}-copr-repos.txt";
+      rpmfusionStateFile = "${stateDir}/${name}-rpmfusion.txt";
+
 
       # Current packages as newline-separated string
       currentPackages = concatStringsSep "\n" container.packages;
       currentAurPackages = concatStringsSep "\n" container.aurPackages;
+      currentCoprRepos = concatStringsSep "\n" container.coprRepos;
+      currentRpmfusion = if container.fedora.rpmfusion.enable then "enabled" else "disabled";
 
       # Paru AUR helper installation script
       paruInstall = ''
         if ! command -v paru &> /dev/null; then
           echo "==> Installing paru AUR helper"
-          sudo pacman -S --noconfirm --needed base-devel git
+          sudo pacman -S --needed --noconfirm base-devel git
           cd /tmp
           git clone https://aur.archlinux.org/paru.git
           cd paru
@@ -211,7 +232,7 @@ let
       # AUR packages installation
       aurInstallCmd =
         if container.aurPackages != [ ] then
-          "paru -S --noconfirm ${concatStringsSep " " container.aurPackages}"
+          "paru -S --needed --noconfirm ${concatStringsSep " " container.aurPackages}"
         else
           "";
 
@@ -229,10 +250,21 @@ let
       # Check if container exists and get its current image
       CONTAINER_EXISTS=false
       CURRENT_IMAGE=""
-      if ${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -F'|' -v name="${container.name}" 'NR>1 && $2 ~ name {found=1}' | grep -q .; then
+      # Parse distrobox list with pipe separator, skip header, trim whitespace
+      CONTAINER_INFO=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -F'|' -v name="${container.name}" '
+        NR>1 {
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2);
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4);
+          if ($2 == name) {
+            print $4;
+            exit;
+          }
+        }
+      ' || echo "")
+      
+      if [ -n "$CONTAINER_INFO" ]; then
         CONTAINER_EXISTS=true
-        # Extract the image from distrobox list output (4th column with pipe separator)
-        CURRENT_IMAGE=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -F'|' -v name="${container.name}" 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); if ($2 == name) {print $4; exit}}')
+        CURRENT_IMAGE="$CONTAINER_INFO"
       fi
 
       # Check if image has changed by comparing actual container image with configured image
@@ -275,6 +307,49 @@ let
       ${optionalString (container.initHook != "") ''
         ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- bash -c '${container.initHook}'
       ''}
+
+      # Handle RPM Fusion for Fedora
+      ${optionalString (pm == "dnf") ''
+      # Check previous RPM Fusion state
+      PREV_RPMFUSION="disabled"
+      if [ -f "${rpmfusionStateFile}" ]; then
+      PREV_RPMFUSION=$(cat "${rpmfusionStateFile}")
+      fi
+      # Enable RPM Fusion if requested
+      if [ "${currentRpmfusion}" = "enabled" ] && [ "$PREV_RPMFUSION" != "enabled" ]; then
+      echo "==> Enabling RPM Fusion repositories"
+      ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '
+      dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+      dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+      '
+      fi
+      # Disable RPM Fusion if no longer requested
+      if [ "${currentRpmfusion}" = "disabled" ] && [ "$PREV_RPMFUSION" = "enabled" ]; then
+      echo "==> Removing RPM Fusion repositories"
+      ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '
+      dnf remove -y rpmfusion-free-release rpmfusion-nonfree-release || true
+      '
+      fi
+      # Update RPM Fusion state file
+      echo "${currentRpmfusion}" > "${rpmfusionStateFile}"
+      ''}
+      # Handle COPR repo removal for Fedora
+      ${optionalString (pm == "dnf") ''
+      if [ -f "${coprReposStateFile}" ]; then
+      # Get COPR repos that were previously enabled but are now removed
+      REMOVED_COPR_REPOS=$(comm -23 \
+      <(sort "${coprReposStateFile}") \
+      <(echo "${currentCoprRepos}" | sort))
+      if [ -n "$REMOVED_COPR_REPOS" ]; then
+      echo "==> Removing COPR repositories no longer in config"
+      for repo in $REMOVED_COPR_REPOS; do
+      if [ -n "$repo" ]; then
+      echo " Disabling COPR repo: $repo"
+      ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo dnf copr disable -y "$repo" || true
+      fi
+      done
+      fi
+      fi
 
       # Enable COPR repos for Fedora
       ${optionalString (container.coprRepos != [ ] && pm == "dnf") ''
@@ -364,7 +439,7 @@ let
 
     # Get list of existing distrobox containers
     if command -v ${pkgs.distrobox}/bin/distrobox &> /dev/null; then
-      EXISTING_CONTAINERS=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | tail -n +2 | ${pkgs.gawk}/bin/awk '{print $2}' || true)
+      EXISTING_CONTAINERS=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -F'|' 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}' || true)
 
       # Remove containers not in config
       for container in $EXISTING_CONTAINERS; do
@@ -383,6 +458,8 @@ let
           rm -f "${stateDir}/$container-packages.txt"
           rm -f "${stateDir}/$container-aur-packages.txt"
           rm -f "${stateDir}/$container-image.txt"
+          rm -f "${stateDir}/$container-copr-repos.txt"
+          rm -f "${stateDir}/$container-rpmfusion.txt"
         fi
       done
     fi
@@ -423,6 +500,7 @@ in
             image = "fedora:39";
             packages = [ "gcc" "make" ];
             coprRepos = [ "atim/starship" ];
+            rpmfusion.enable = true;
           };
         }
       '';
