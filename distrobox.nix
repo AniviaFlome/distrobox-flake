@@ -204,7 +204,7 @@ let
       currentPackages = concatStringsSep "\n" container.packages;
       currentAurPackages = concatStringsSep "\n" container.aurPackages;
       currentCoprRepos = concatStringsSep "\n" container.coprRepos;
-      currentRpmfusion = if container.fedora.rpmfusion.enable then "enabled" else "disabled";
+      currentRpmfusion = if container.rpmfusion.enable then "enabled" else "disabled";
 
       # Paru AUR helper installation script
       paruInstall = ''
