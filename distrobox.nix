@@ -229,10 +229,10 @@ let
       # Check if container exists and get its current image
       CONTAINER_EXISTS=false
       CURRENT_IMAGE=""
-      if ${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | grep -q "^${container.name}"; then
+      if ${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -F'|' -v name="${container.name}" 'NR>1 && $2 ~ name {found=1}' | grep -q .; then
         CONTAINER_EXISTS=true
-        # Extract the image from distrobox list output (4th column)
-        CURRENT_IMAGE=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -v name="${container.name}" '$2 == name {print $4; exit}')
+        # Extract the image from distrobox list output (4th column with pipe separator)
+        CURRENT_IMAGE=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -F'|' -v name="${container.name}" 'NR>1 {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); if ($2 == name) {print $4; exit}}')
       fi
 
       # Check if image has changed by comparing actual container image with configured image
