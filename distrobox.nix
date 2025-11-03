@@ -117,7 +117,7 @@ let
   );
 
   # State directory for tracking installed packages
-  stateDir = "${config.home.homeDirectory}/.local/distrobox-flake";
+  stateDir = "${config.home.homeDirectory}/.local/state/distrobox-flake";
 
   # Get package manager from distro
   getPackageManager = distro: distroToPackageManager.${distro};
@@ -226,25 +226,27 @@ let
       # Ensure state directory exists
       mkdir -p "${stateDir}"
 
-      # Check if image has changed
+      # Check if container exists and get its current image
+      CONTAINER_EXISTS=false
+      CURRENT_IMAGE=""
+      if ${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | grep -q "^${container.name}"; then
+        CONTAINER_EXISTS=true
+        # Extract the image from distrobox list output (4th column)
+        CURRENT_IMAGE=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | ${pkgs.gawk}/bin/awk -v name="${container.name}" '$2 == name {print $4; exit}')
+      fi
+
+      # Check if image has changed by comparing actual container image with configured image
       IMAGE_CHANGED=false
-      if [ -f "${imageStateFile}" ]; then
-        STORED_IMAGE=$(cat "${imageStateFile}")
-        if [ "$STORED_IMAGE" != "${container.image}" ]; then
-          echo "==> Image changed for ${container.name}: $STORED_IMAGE -> ${container.image}"
+      if [ "$CONTAINER_EXISTS" = true ] && [ -n "$CURRENT_IMAGE" ]; then
+        if [ "$CURRENT_IMAGE" != "${container.image}" ]; then
+          echo "==> Image mismatch for ${container.name}: $CURRENT_IMAGE -> ${container.image}"
           IMAGE_CHANGED=true
         fi
       fi
 
-      # Check if container exists
-      CONTAINER_EXISTS=false
-      if ${pkgs.distrobox}/bin/distrobox list | grep -q "^${container.name}"; then
-        CONTAINER_EXISTS=true
-      fi
-
       # Remove and recreate container if image changed
       if [ "$CONTAINER_EXISTS" = true ] && [ "$IMAGE_CHANGED" = true ]; then
-        echo "==> Removing container ${container.name} due to image change"
+        echo "==> Rebuilding container ${container.name} due to image change"
         ${pkgs.distrobox}/bin/distrobox rm "${container.name}" --force
         CONTAINER_EXISTS=false
       fi
