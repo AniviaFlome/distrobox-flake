@@ -185,9 +185,10 @@ let
       updateCmd = getUpdateCommand pm;
       flags = concatStringsSep " " container.additionalFlags;
 
-      # State files for tracking packages
+      # State files for tracking packages and image
       packagesStateFile = "${stateDir}/${name}-packages.txt";
       aurPackagesStateFile = "${stateDir}/${name}-aur-packages.txt";
+      imageStateFile = "${stateDir}/${name}-image.txt";
 
       # Current packages as newline-separated string
       currentPackages = concatStringsSep "\n" container.packages;
@@ -225,14 +226,43 @@ let
       # Ensure state directory exists
       mkdir -p "${stateDir}"
 
+      # Check if image has changed
+      IMAGE_CHANGED=false
+      if [ -f "${imageStateFile}" ]; then
+        STORED_IMAGE=$(cat "${imageStateFile}")
+        if [ "$STORED_IMAGE" != "${container.image}" ]; then
+          echo "==> Image changed for ${container.name}: $STORED_IMAGE -> ${container.image}"
+          IMAGE_CHANGED=true
+        fi
+      fi
+
       # Check if container exists
-      if ! ${pkgs.distrobox}/bin/distrobox list | grep -q "^${container.name}"; then
+      CONTAINER_EXISTS=false
+      if ${pkgs.distrobox}/bin/distrobox list | grep -q "^${container.name}"; then
+        CONTAINER_EXISTS=true
+      fi
+
+      # Remove and recreate container if image changed
+      if [ "$CONTAINER_EXISTS" = true ] && [ "$IMAGE_CHANGED" = true ]; then
+        echo "==> Removing container ${container.name} due to image change"
+        ${pkgs.distrobox}/bin/distrobox rm "${container.name}" --force
+        CONTAINER_EXISTS=false
+      fi
+
+      # Create container if it doesn't exist
+      if [ "$CONTAINER_EXISTS" = false ]; then
+        echo "==> Creating container ${container.name}"
         ${pkgs.distrobox}/bin/distrobox create \
           --name "${container.name}" \
           --image "${container.image}" \
           ${flags} \
           --yes
+        # Clear state files when container is recreated
+        rm -f "${packagesStateFile}" "${aurPackagesStateFile}"
       fi
+
+      # Update image state file
+      echo "${container.image}" > "${imageStateFile}"
 
       # Update container if autoUpdate is enabled
       ${optionalString container.autoUpdate ''
@@ -327,6 +357,35 @@ let
   activationScript = pkgs.writeShellScript "distrobox-activation" ''
     set -euo pipefail
 
+    # List of containers that should exist (defined in config)
+    CONFIGURED_CONTAINERS=(${concatStringsSep " " (mapAttrsToList (name: _: name) cfg.containers)})
+
+    # Get list of existing distrobox containers
+    if command -v ${pkgs.distrobox}/bin/distrobox &> /dev/null; then
+      EXISTING_CONTAINERS=$(${pkgs.distrobox}/bin/distrobox list --no-color 2>/dev/null | tail -n +2 | ${pkgs.gawk}/bin/awk '{print $2}' || true)
+
+      # Remove containers not in config
+      for container in $EXISTING_CONTAINERS; do
+        FOUND=false
+        for configured in "''${CONFIGURED_CONTAINERS[@]}"; do
+          if [ "$container" = "$configured" ]; then
+            FOUND=true
+            break
+          fi
+        done
+
+        if [ "$FOUND" = false ]; then
+          echo "==> Removing container '$container' (not in configuration)"
+          ${pkgs.distrobox}/bin/distrobox rm "$container" --force
+          # Clean up state files for removed container
+          rm -f "${stateDir}/$container-packages.txt"
+          rm -f "${stateDir}/$container-aur-packages.txt"
+          rm -f "${stateDir}/$container-image.txt"
+        fi
+      done
+    fi
+
+    # Setup configured containers
     ${concatStringsSep "\n" (
       mapAttrsToList (name: container: ''
         ${generateContainerScript name container}
