@@ -79,22 +79,15 @@ let
           example = [ "atim/starship" ];
         };
 
-        fedora = mkOption {
-          type = types.submodule {
-            options = {
-              rpmfusion = {
-                enable = mkOption {
-                  type = types.bool;
-                  default = false;
-                  description = "Enable RPM Fusion repositories (free and nonfree) for Fedora containers";
-                };
-              };
-            };
+        rpmfusion = {
+          enable = mkOption {
+            type = types.bool;
+            default = false;
+            description = "Enable RPM Fusion repositories (free and nonfree) for Fedora containers";
           };
-          default = { };
-          description = "Fedora-specific options";
         };
 
+        };
         autoUpdate = mkOption {
           type = types.bool;
           default = false;
@@ -261,7 +254,7 @@ let
           }
         }
       ' || echo "")
-      
+
       if [ -n "$CONTAINER_INFO" ]; then
         CONTAINER_EXISTS=true
         CURRENT_IMAGE="$CONTAINER_INFO"
