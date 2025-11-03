@@ -350,6 +350,7 @@ let
       done
       fi
       fi
+      ''}
 
       # Enable COPR repos for Fedora
       ${optionalString (container.coprRepos != [ ] && pm == "dnf") ''
