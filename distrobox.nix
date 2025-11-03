@@ -87,7 +87,6 @@ let
           };
         };
 
-        };
         autoUpdate = mkOption {
           type = types.bool;
           default = false;
@@ -201,7 +200,6 @@ let
       coprReposStateFile = "${stateDir}/${name}-copr-repos.txt";
       rpmfusionStateFile = "${stateDir}/${name}-rpmfusion.txt";
 
-
       # Current packages as newline-separated string
       currentPackages = concatStringsSep "\n" container.packages;
       currentAurPackages = concatStringsSep "\n" container.aurPackages;
@@ -303,46 +301,46 @@ let
 
       # Handle RPM Fusion for Fedora
       ${optionalString (pm == "dnf") ''
-      # Check previous RPM Fusion state
-      PREV_RPMFUSION="disabled"
-      if [ -f "${rpmfusionStateFile}" ]; then
-      PREV_RPMFUSION=$(cat "${rpmfusionStateFile}")
-      fi
-      # Enable RPM Fusion if requested
-      if [ "${currentRpmfusion}" = "enabled" ] && [ "$PREV_RPMFUSION" != "enabled" ]; then
-      echo "==> Enabling RPM Fusion repositories"
-      ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '
-      dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
-      dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
-      '
-      fi
-      # Disable RPM Fusion if no longer requested
-      if [ "${currentRpmfusion}" = "disabled" ] && [ "$PREV_RPMFUSION" = "enabled" ]; then
-      echo "==> Removing RPM Fusion repositories"
-      ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '
-      dnf remove -y rpmfusion-free-release rpmfusion-nonfree-release || true
-      '
-      fi
-      # Update RPM Fusion state file
-      echo "${currentRpmfusion}" > "${rpmfusionStateFile}"
+        # Check previous RPM Fusion state
+        PREV_RPMFUSION="disabled"
+        if [ -f "${rpmfusionStateFile}" ]; then
+        PREV_RPMFUSION=$(cat "${rpmfusionStateFile}")
+        fi
+        # Enable RPM Fusion if requested
+        if [ "${currentRpmfusion}" = "enabled" ] && [ "$PREV_RPMFUSION" != "enabled" ]; then
+        echo "==> Enabling RPM Fusion repositories"
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '
+        dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+        dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+        '
+        fi
+        # Disable RPM Fusion if no longer requested
+        if [ "${currentRpmfusion}" = "disabled" ] && [ "$PREV_RPMFUSION" = "enabled" ]; then
+        echo "==> Removing RPM Fusion repositories"
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo bash -c '
+        dnf remove -y rpmfusion-free-release rpmfusion-nonfree-release || true
+        '
+        fi
+        # Update RPM Fusion state file
+        echo "${currentRpmfusion}" > "${rpmfusionStateFile}"
       ''}
       # Handle COPR repo removal for Fedora
       ${optionalString (pm == "dnf") ''
-      if [ -f "${coprReposStateFile}" ]; then
-      # Get COPR repos that were previously enabled but are now removed
-      REMOVED_COPR_REPOS=$(comm -23 \
-      <(sort "${coprReposStateFile}") \
-      <(echo "${currentCoprRepos}" | sort))
-      if [ -n "$REMOVED_COPR_REPOS" ]; then
-      echo "==> Removing COPR repositories no longer in config"
-      for repo in $REMOVED_COPR_REPOS; do
-      if [ -n "$repo" ]; then
-      echo " Disabling COPR repo: $repo"
-      ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo dnf copr disable -y "$repo" || true
-      fi
-      done
-      fi
-      fi
+        if [ -f "${coprReposStateFile}" ]; then
+        # Get COPR repos that were previously enabled but are now removed
+        REMOVED_COPR_REPOS=$(comm -23 \
+        <(sort "${coprReposStateFile}") \
+        <(echo "${currentCoprRepos}" | sort))
+        if [ -n "$REMOVED_COPR_REPOS" ]; then
+        echo "==> Removing COPR repositories no longer in config"
+        for repo in $REMOVED_COPR_REPOS; do
+        if [ -n "$repo" ]; then
+        echo " Disabling COPR repo: $repo"
+        ${pkgs.distrobox}/bin/distrobox enter "${container.name}" -- sudo dnf copr disable -y "$repo" || true
+        fi
+        done
+        fi
+        fi
       ''}
 
       # Enable COPR repos for Fedora
