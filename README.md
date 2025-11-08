@@ -1,3 +1,5 @@
+# This project is archived. Using patches and pre-init hooks seems more reasonable than trying to manage all of the containers with this.
+
 # Distrobox Home Manager Module
 
 A declarative [Home Manager](https://github.com/nix-community/home-manager) module for managing [distrobox](https://github.com/89luca89/distrobox) containers with automatic package installation.
