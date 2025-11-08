@@ -18,19 +18,16 @@
         "x86_64-linux"
         "aarch64-linux"
         "x86_64-darwin"
+        "aarch64-darwin"
       ];
-      eachSystem = f: nixpkgs.lib.genAttrs systems (system: f system nixpkgs.legacyPackages.${system});
-
-      treefmtEval = eachSystem (_system: pkgs: treefmt-nix.lib.evalModule pkgs ./treefmt.nix);
+      eachSystem = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+      treefmtEval = eachSystem (pkgs: treefmt-nix.lib.evalModule pkgs ./treefmt.nix);
     in
     {
-      formatter = eachSystem (system: _pkgs: treefmtEval.${system}.config.build.wrapper);
-
-      checks = eachSystem (
-        system: _pkgs: {
-          formatting = treefmtEval.${system}.config.build.check self;
-        }
-      );
+      formatter = eachSystem (pkgs: treefmtEval.${pkgs.stdenv.hostPlatform.system}.config.build.wrapper);
+      checks = eachSystem (pkgs: {
+        formatting = treefmtEval.${pkgs.stdenv.hostPlatform.system}.config.build.check self;
+      });
 
       homeManagerModules = {
         distrobox = import ./distrobox.nix;

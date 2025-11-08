@@ -166,23 +166,6 @@ let
       "echo 'Unknown package manager: ${pm}'";
 
   # Generate remove command for a package manager
-  getRemoveCommand =
-    pm: packages:
-    let
-      pkgList = concatStringsSep " " packages;
-    in
-    if pm == "pacman" then
-      "pacman -Rs --noconfirm ${pkgList}"
-    else if pm == "apt" then
-      "apt remove -y ${pkgList}"
-    else if pm == "dnf" then
-      "dnf remove -y ${pkgList}"
-    else if pm == "zypper" then
-      "zypper remove -y ${pkgList}"
-    else if pm == "apk" then
-      "apk del ${pkgList}"
-    else
-      "echo 'Unknown package manager: ${pm}'";
 
   # Generate setup script for a single container
   generateContainerScript =
