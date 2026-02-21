@@ -26,27 +26,6 @@ let
   containersWithChaotic = filterAttrs (_: c: c.chaotic-aur.enable) cfg.containers;
 in
 {
-  options.programs.distrobox-extra.containers = mkOption {
-    type = types.attrsOf (
-      types.submodule {
-        options.chaotic-aur = {
-          enable = mkEnableOption "Chaotic AUR repository support (Arch containers only)";
-
-          packages = mkOption {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "Packages to install from the Chaotic AUR repository.";
-            example = [
-              "firefox-kde-opensuse"
-              "rate-mirrors"
-            ];
-          };
-        };
-      }
-    );
-    default = { };
-  };
-
   config.programs.distrobox.containers = mapAttrs (_: c: {
     init_hooks = chaoticInitHooks c.chaotic-aur.packages;
   }) containersWithChaotic;

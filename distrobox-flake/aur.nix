@@ -25,27 +25,6 @@ let
   containersWithAur = filterAttrs (_: c: c.aur.enable) cfg.containers;
 in
 {
-  options.programs.distrobox-extra.containers = mkOption {
-    type = types.attrsOf (
-      types.submodule {
-        options.aur = {
-          enable = mkEnableOption "AUR package support (Arch containers only)";
-
-          packages = mkOption {
-            type = types.listOf types.str;
-            default = [ ];
-            description = "AUR packages to install. Paru is bootstrapped automatically.";
-            example = [
-              "paru-bin"
-              "visual-studio-code-bin"
-            ];
-          };
-        };
-      }
-    );
-    default = { };
-  };
-
   config.programs.distrobox.containers = mapAttrs (_: c: {
     init_hooks = aurInitHooks c.aur.packages;
   }) containersWithAur;

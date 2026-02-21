@@ -15,26 +15,6 @@ let
   ) cfg.containers;
 in
 {
-  options.programs.distrobox-extra.containers = mkOption {
-    type = types.attrsOf (
-      types.submodule {
-        options.rpmfusion = {
-          free = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Enable RPM Fusion Free repository (Fedora only).";
-          };
-          nonfree = mkOption {
-            type = types.bool;
-            default = false;
-            description = "Enable RPM Fusion Nonfree repository (Fedora only).";
-          };
-        };
-      }
-    );
-    default = { };
-  };
-
   config.programs.distrobox.containers = mapAttrs (_: c: {
     pre_init_hooks = rpmfusionPreHooks c.rpmfusion;
   }) containersWithRpmfusion;
