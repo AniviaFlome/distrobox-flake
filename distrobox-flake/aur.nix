@@ -6,9 +6,9 @@ let
   paruBootstrapCmd = concatStringsSep " && " [
     "sudo pacman -S --needed --noconfirm base-devel git"
     "cd /tmp"
-    "git clone https://aur.archlinux.org/paru-bin.git"
+    "sudo -u $USER git clone https://aur.archlinux.org/paru-bin.git"
     "cd paru-bin"
-    "makepkg -si --noconfirm"
+    "sudo -u $USER makepkg -si --noconfirm"
     "cd /tmp"
     "rm -rf paru-bin"
   ];
@@ -17,7 +17,7 @@ let
     aurPkgs:
     optionals (aurPkgs != [ ]) [
       "command -v paru > /dev/null 2>&1 || (${paruBootstrapCmd})"
-      "paru -S --needed --noconfirm ${concatStringsSep " " aurPkgs}"
+      "sudo -u $USER paru -S --needed --noconfirm ${concatStringsSep " " aurPkgs}"
     ];
 in
 {
