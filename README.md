@@ -1,4 +1,4 @@
-# distrobox-flake
+# distrobox-extra
 
 Extension module for [home-manager](https://github.com/nix-community/home-manager)'s `programs.distrobox` that adds distro-specific features via `distrobox-assemble` hooks.
 
@@ -33,18 +33,28 @@ Import the module in your home-manager config:
 
 ```nix
 {
+  imports = [ ./distrobox-extra ];
+
   programs.distrobox = {
     enable = true;
     containers = {
-      arch.image = "quay.io/toolbx/arch-toolbox:latest";
-      fedora.image = "quay.io/fedora/fedora-toolbox:rawhide";
+      arch = {
+        image = "archlinux:latest";
+        additional_packages = "vim git neovim";
+      };
+      fedora = {
+        image = "fedora:41";
+        additional_packages = "gcc make starship";
+      };
     };
   };
 
-  programs.distrobox-flake.containers = {
-    arch.aur = {
-      enable = true;
-      packages = [ "visual-studio-code-bin" ];
+  programs.distrobox-extra.containers = {
+    arch = {
+      aur = {
+        enable = true;
+        packages = [ "visual-studio-code-bin" ];
+      };
     };
     fedora = {
       copr = {
