@@ -1,44 +1,50 @@
-# distrobox-extra
+# distrobox-flake
 
 Extension module for [home-manager](https://github.com/nix-community/home-manager)'s `programs.distrobox` that adds distro-specific features via `distrobox-assemble` hooks.
 
 ## Features
 
 - **AUR packages** (Arch) — auto-bootstraps [paru](https://github.com/Morganamilo/paru) and installs AUR packages
-- **COPR repos** (Fedora) — enables COPR repositories before package installation
+- **Chaotic AUR** (Arch) — sets up the [Chaotic AUR](https://aur.chaotic.cx/) repository and installs packages
+- **COPR repos** (Fedora) — enables COPR repositories and installs packages from them
 - **RPM Fusion** (Fedora) — enables free and/or nonfree RPM Fusion repositories
 
-## How It Works
+## Installation
 
-Each sub-module compiles its options into `pre_init_hooks` or `init_hooks` that get merged into `programs.distrobox.containers`, which home-manager renders into the `distrobox-assemble` INI file.
+Add the flake input:
 
-## Example Config
+```nix
+# flake.nix
+{
+  inputs.distrobox-flake.url = "github:AniviaFlome/distrobox-flake";
+}
+```
+
+Import the module in your home-manager config:
+
+```nix
+{ inputs, ... }:
+{
+  imports = [ inputs.distrobox-flake.homeManagerModules.default ];
+}
+```
+
+## Usage
 
 ```nix
 {
-  imports = [ ./distrobox-extra ];
-
   programs.distrobox = {
     enable = true;
     containers = {
-      arch = {
-        image = "archlinux:latest";
-        additional_packages = "vim git neovim";
-      };
-      fedora = {
-        image = "fedora:41";
-        additional_packages = "gcc make starship";
-      };
+      arch.image = "quay.io/toolbx/arch-toolbox:latest";
+      fedora.image = "quay.io/fedora/fedora-toolbox:rawhide";
     };
   };
 
-  programs.distrobox-extra.containers = {
-    arch = {
+  programs.distrobox-flake.containers = {
+    arch.aur = {
       enable = true;
-      aur = {
-        enable = true;
-        packages = [ "visual-studio-code-bin" ];
-      };
+      packages = [ "visual-studio-code-bin" ];
     };
     fedora = {
       copr = {

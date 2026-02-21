@@ -12,14 +12,14 @@ let
 
   features = map (f: import f { inherit lib; }) featureFiles;
 
-  cfg = config.programs.distrobox-extra;
+  cfg = config.programs.distrobox-flake;
 
   mkFeatureConfig =
     feature:
     mapAttrs (_: feature.mkContainerConfig) (filterAttrs (_: feature.hasFeature) cfg.containers);
 in
 {
-  options.programs.distrobox-extra.containers = mkOption {
+  options.programs.distrobox-flake.containers = mkOption {
     type = types.attrsOf (
       types.submodule {
         options = lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features);
