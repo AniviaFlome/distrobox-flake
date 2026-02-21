@@ -1,5 +1,4 @@
-_:
-{
+_: {
   projectRootFile = "treefmt.nix";
 
   programs = {
