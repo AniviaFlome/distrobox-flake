@@ -1,20 +1,36 @@
-{ config, lib, ... }:
+{ lib }:
 
 with lib;
 
 let
-  cfg = config.programs.distrobox-extra;
-
   coprPreHooks = repos: map (repo: "sudo dnf copr enable -y ${repo}") repos;
 
   coprInstallHook =
     packages: optional (packages != [ ]) "sudo dnf install -y ${concatStringsSep " " packages}";
-
-  containersWithCopr = filterAttrs (_: c: c.copr.enable) cfg.containers;
 in
 {
-  config.programs.distrobox.containers = mapAttrs (_: c: {
-    pre_init_hooks = coprPreHooks c.copr.repos;
-    init_hooks = coprInstallHook c.copr.packages;
-  }) containersWithCopr;
+  options.copr = {
+    enable = mkEnableOption "COPR repository support (Fedora containers only)";
+
+    repos = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "COPR repositories to enable. Enabled before package installation.";
+      example = [ "atim/starship" ];
+    };
+
+    packages = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Packages to install from COPR repositories.";
+      example = [ "starship" ];
+    };
+  };
+
+  mkContainerConfig = containerCfg: {
+    pre_init_hooks = coprPreHooks containerCfg.copr.repos;
+    init_hooks = coprInstallHook containerCfg.copr.packages;
+  };
+
+  hasFeature = containerCfg: containerCfg.copr.enable;
 }

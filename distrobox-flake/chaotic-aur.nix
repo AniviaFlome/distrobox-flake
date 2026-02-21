@@ -1,10 +1,8 @@
-{ config, lib, ... }:
+{ lib }:
 
 with lib;
 
 let
-  cfg = config.programs.distrobox-extra;
-
   chaoticSetupCmd = concatStringsSep " && " [
     "sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com"
     "sudo pacman-key --lsign-key 3056513887B78AEB"
@@ -22,11 +20,25 @@ let
     ++ optional (
       packages != [ ]
     ) "sudo pacman -S --needed --noconfirm ${concatStringsSep " " packages}";
-
-  containersWithChaotic = filterAttrs (_: c: c.chaotic-aur.enable) cfg.containers;
 in
 {
-  config.programs.distrobox.containers = mapAttrs (_: c: {
-    init_hooks = chaoticInitHooks c.chaotic-aur.packages;
-  }) containersWithChaotic;
+  options.chaotic-aur = {
+    enable = mkEnableOption "Chaotic AUR repository support (Arch containers only)";
+
+    packages = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      description = "Packages to install from the Chaotic AUR repository.";
+      example = [
+        "firefox-kde-opensuse"
+        "rate-mirrors"
+      ];
+    };
+  };
+
+  mkContainerConfig = containerCfg: {
+    init_hooks = chaoticInitHooks containerCfg.chaotic-aur.packages;
+  };
+
+  hasFeature = containerCfg: containerCfg.chaotic-aur.enable;
 }
