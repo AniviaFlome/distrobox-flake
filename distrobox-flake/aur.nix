@@ -3,15 +3,14 @@
 with lib;
 
 let
-  paruBootstrapCmd = concatStringsSep " && " [
-    "sudo pacman -S --needed --noconfirm base-devel git"
-    "cd /tmp"
-    "rm -rf paru-bin"
-    "sudo -u $USER git clone https://aur.archlinux.org/paru-bin.git"
-    "cd paru-bin"
+  paruBootstrapCmd = concatStringsSep " " [
+    "PARU_TMPDIR=$(sudo -u $USER mktemp -d) &&"
+    "trap 'rm -rf $PARU_TMPDIR' EXIT &&"
+    "sudo pacman -S --needed --noconfirm base-devel git &&"
+    "cd $PARU_TMPDIR &&"
+    "sudo -u $USER git clone https://aur.archlinux.org/paru-bin.git &&"
+    "cd paru-bin &&"
     "sudo -u $USER makepkg -si --noconfirm"
-    "cd /tmp"
-    "rm -rf paru-bin"
   ];
 
   aurInitHooks =
