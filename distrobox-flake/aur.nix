@@ -10,6 +10,7 @@ let
     "cd /tmp/paru-bootstrap"
     "sudo -u $USER makepkg -si --noconfirm"
     "rm -rf /tmp/paru-bootstrap"
+    "sudo ldconfig"
   ];
 
   aurInitHooks =
