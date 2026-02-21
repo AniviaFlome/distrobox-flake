@@ -49,7 +49,7 @@ Import the module in your home-manager config:
     };
   };
 
-  programs.distrobox-extra.containers = {
+  programs.distrobox-flake.containers = {
     arch = {
       aur = {
         enable = true;
