@@ -16,24 +16,17 @@ Add the flake input:
 ```nix
 # flake.nix
 {
-  inputs.distrobox-flake.url = "github:AniviaFlome/distrobox-flake";
+  inputs = {
+    distrobox-flake.url = "github:AniviaFlome/distrobox-flake";
+  };
 }
 ```
 
-Import the module in your home-manager config:
+## Example Config
 
 ```nix
-{ inputs, ... }:
 {
   imports = [ inputs.distrobox-flake.homeManagerModules.default ];
-}
-```
-
-## Usage
-
-```nix
-{
-  imports = [ ./distrobox-extra ];
 
   programs.distrobox = {
     enable = true;
