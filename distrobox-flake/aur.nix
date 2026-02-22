@@ -5,9 +5,10 @@ with lib;
 let
   paruBootstrapCmd = concatStringsSep " && " [
     "sudo pacman -Syu --noconfirm"
-    "sudo pacman -S --needed --noconfirm base-devel git"
+    "sudo pacman -S --needed --noconfirm base-devel git rustup"
+    "sudo -u $USER rustup default stable"
     "rm -rf /tmp/paru-bootstrap"
-    "sudo -u $USER git clone https://aur.archlinux.org/paru-bin.git /tmp/paru-bootstrap"
+    "sudo -u $USER git clone https://aur.archlinux.org/paru.git /tmp/paru-bootstrap"
     "cd /tmp/paru-bootstrap"
     "sudo -u $USER makepkg -si --noconfirm"
     "rm -rf /tmp/paru-bootstrap"
