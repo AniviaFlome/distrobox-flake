@@ -35,7 +35,9 @@ in
   config = mkMerge [
     { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
     (mkIf cfg.aliases.enable {
-      home.shellAliases = mapAttrs (name: _: "distrobox enter ${name}") config.programs.distrobox.containers;
+      home.shellAliases = mapAttrs (
+        name: _: "distrobox enter ${name}"
+      ) config.programs.distrobox.containers;
     })
   ];
 }
