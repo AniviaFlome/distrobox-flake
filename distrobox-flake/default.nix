@@ -20,14 +20,14 @@ let
 in
 {
   options.programs.distrobox-flake = {
-    aliases.enable = mkEnableOption "auto-generated shell aliases for entering containers";
+    alias.enable = mkEnableOption "auto-generated shell alias for entering containers";
     containers = mkOption {
       type = types.attrsOf (
         types.submodule (
           { name, ... }:
           {
             options = (lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features)) // {
-              aliases.name = mkOption {
+              alias.name = mkOption {
                 type = types.str;
                 default = name;
                 description = "Alias used to enter the container. Defaults to the container's name.";
@@ -43,9 +43,9 @@ in
 
   config = mkMerge [
     { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
-    (mkIf cfg.aliases.enable {
+    (mkIf cfg.alias.enable {
       home.shellAliases = mapAttrs' (
-        name: containerCfg: nameValuePair containerCfg.aliases.name "distrobox enter ${name}"
+        name: containerCfg: nameValuePair containerCfg.alias.name "distrobox enter ${name}"
       ) cfg.containers;
     })
   ];
