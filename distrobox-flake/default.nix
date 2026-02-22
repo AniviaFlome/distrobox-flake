@@ -19,15 +19,23 @@ let
     mapAttrs (_: feature.mkContainerConfig) (filterAttrs (_: feature.hasFeature) cfg.containers);
 in
 {
-  options.programs.distrobox-flake.containers = mkOption {
-    type = types.attrsOf (
-      types.submodule {
-        options = lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features);
-      }
-    );
-    default = { };
-    description = "Extra configuration for distrobox containers.";
+  options.programs.distrobox-flake = {
+    aliases.enable = mkEnableOption "auto-generated shell aliases for entering containers";
+    containers = mkOption {
+      type = types.attrsOf (
+        types.submodule {
+          options = lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features);
+        }
+      );
+      default = { };
+      description = "Extra configuration for distrobox containers.";
+    };
   };
 
-  config.programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features);
+  config = mkMerge [
+    { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
+    (mkIf cfg.aliases.enable {
+      home.shellAliases = mapAttrs (name: _: "distrobox enter ${name}") config.programs.distrobox.containers;
+    })
+  ];
 }
