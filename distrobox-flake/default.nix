@@ -23,9 +23,18 @@ in
     aliases.enable = mkEnableOption "auto-generated shell aliases for entering containers";
     containers = mkOption {
       type = types.attrsOf (
-        types.submodule {
-          options = lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features);
-        }
+        types.submodule (
+          { name, ... }:
+          {
+            options = (lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features)) // {
+              aliases.name = mkOption {
+                type = types.str;
+                default = name;
+                description = "Alias used to enter the container. Defaults to the container's name.";
+              };
+            };
+          }
+        )
       );
       default = { };
       description = "Extra configuration for distrobox containers.";
@@ -35,9 +44,9 @@ in
   config = mkMerge [
     { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
     (mkIf cfg.aliases.enable {
-      home.shellAliases = mapAttrs (
-        name: _: "distrobox enter ${name}"
-      ) config.programs.distrobox.containers;
+      home.shellAliases = mapAttrs' (
+        name: containerCfg: nameValuePair containerCfg.aliases.name "distrobox enter ${name}"
+      ) cfg.containers;
     })
   ];
 }
