@@ -27,10 +27,15 @@ in
           { name, ... }:
           {
             options = (lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features)) // {
-              alias.name = mkOption {
-                type = types.str;
-                default = name;
-                description = "Alias used to enter the container. Defaults to the container's name.";
+              alias = {
+                enable = mkEnableOption "shell alias for this container" // {
+                  default = true;
+                };
+                name = mkOption {
+                  type = types.str;
+                  default = name;
+                  description = "Alias used to enter the container. Defaults to the container's name.";
+                };
               };
             };
           }
@@ -46,7 +51,7 @@ in
     (mkIf cfg.alias.enable {
       home.shellAliases = mapAttrs' (
         name: containerCfg: nameValuePair containerCfg.alias.name "distrobox enter ${name}"
-      ) cfg.containers;
+      ) (filterAttrs (_: c: c.alias.enable) cfg.containers);
     })
   ];
 }
