@@ -20,6 +20,7 @@ let
 in
 {
   options.programs.distrobox-flake = {
+    enable = mkEnableOption "distrobox-flake integration";
     alias.enable = mkEnableOption "auto-generated shell alias for entering containers";
     containers = mkOption {
       type = types.attrsOf (
@@ -46,12 +47,12 @@ in
     };
   };
 
-  config = mkMerge [
+  config = mkIf cfg.enable (mkMerge [
     { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
     (mkIf cfg.alias.enable {
       home.shellAliases = mapAttrs' (
         name: containerCfg: nameValuePair containerCfg.alias.name "distrobox enter ${name}"
       ) (filterAttrs (_: c: c.alias.enable) cfg.containers);
     })
-  ];
+  ]);
 }
