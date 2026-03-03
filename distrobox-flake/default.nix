@@ -8,6 +8,8 @@ let
     ./chaotic-aur.nix
     ./copr.nix
     ./rpmfusion.nix
+    ./packages.nix
+    ./symlinks.nix
   ];
 
   features = map (f: import f { inherit lib; }) featureFiles;
