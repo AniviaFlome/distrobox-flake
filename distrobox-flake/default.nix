@@ -29,8 +29,10 @@ in
           {
             options = (lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features)) // {
               alias = {
-                enable = mkEnableOption "shell alias for this container" // {
+                enable = mkOption {
+                  type = types.bool;
                   default = true;
+                  description = "Whether to enable a shell alias for this container.";
                 };
                 name = mkOption {
                   type = types.str;
