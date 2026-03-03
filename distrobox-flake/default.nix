@@ -23,7 +23,7 @@ in
 {
   options.programs.distrobox-flake = {
     enable = mkEnableOption "distrobox-flake integration";
-    alias.enable = mkEnableOption "auto-generated shell alias for entering containers";
+    alias.enable = mkEnableOption "Shell alias for entering containers";
     containers = mkOption {
       type = types.attrsOf (
         types.submodule (
