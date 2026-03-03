@@ -5,18 +5,7 @@ with lib;
 let
   linkPackagesHook =
     packages:
-    let
-      # For each package, create a string of shell commands to symlink its bin/
-      # contents to /usr/local/bin/. We use find to easily locate executables.
-      linkCmds = map (pkg: ''
-        if [ -d "${pkg}/bin" ]; then
-          sudo find "${pkg}/bin" -mindepth 1 -maxdepth 1 -type f -executable -o -type l | while read -r f; do
-            sudo ln -sf "$f" "/usr/local/bin/"
-          done
-        fi
-      '') packages;
-    in
-    optional (packages != [ ]) (concatStringsSep "\n" linkCmds);
+    map (pkg: ''[ ! -d "${pkg}/bin" ] || sudo find "${pkg}/bin" -mindepth 1 -maxdepth 1 \( -type f -executable -o -type l \) -exec sudo ln -sf {} /usr/local/bin/ \;'') packages;
 in
 {
   options.packages = mkOption {

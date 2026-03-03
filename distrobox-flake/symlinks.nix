@@ -5,15 +5,7 @@ with lib;
 let
   linkFilesHook =
     symlinks:
-    let
-      # symlinks is an attrset: targetPath -> sourcePath
-      # We create the parent directory of the target, then symlink source to target.
-      linkCmds = mapAttrsToList (target: source: ''
-        sudo mkdir -p "$(dirname "${target}")"
-        sudo ln -sf "${source}" "${target}"
-      '') symlinks;
-    in
-    optional (symlinks != { }) (concatStringsSep "\n" linkCmds);
+    mapAttrsToList (target: source: ''sudo mkdir -p "$(dirname "${target}")" && sudo ln -sf "${source}" "${target}"'') symlinks;
 in
 {
   options.symlinks = mkOption {
