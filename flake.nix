@@ -31,6 +31,7 @@
 
       checks = forAllSystems (system: {
         formatting = treefmtEval.${system}.config.build.check self;
+        rpmfusion-tests = import ./tests/rpmfusion.nix { pkgs = nixpkgs.legacyPackages.${system}; };
       });
 
       homeManagerModules = {
