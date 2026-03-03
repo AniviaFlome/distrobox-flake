@@ -29,9 +29,19 @@
     {
       formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
 
-      checks = forAllSystems (system: {
-        formatting = treefmtEval.${system}.config.build.check self;
-      });
+      checks = forAllSystems (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          testResults = import ./tests { inherit (pkgs) lib; };
+        in
+        {
+          formatting = treefmtEval.${system}.config.build.check self;
+          tests =
+            if testResults == [ ] then
+              pkgs.runCommand "tests-passed" { } "touch $out"
+            else
+              abort "Tests failed: ${builtins.toJSON testResults}";
+        });
 
       homeManagerModules = {
         distrobox-flake = import ./distrobox-flake;

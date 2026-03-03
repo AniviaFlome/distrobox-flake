@@ -33,4 +33,8 @@ in
   };
 
   hasFeature = containerCfg: containerCfg.copr.enable;
+
+  # Exposed for testing
+  _coprPreHooks = coprPreHooks;
+  _coprInstallHook = coprInstallHook;
 }
