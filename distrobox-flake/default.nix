@@ -26,7 +26,7 @@ in
     alias.enable = mkOption {
       type = types.bool;
       default = true;
-      description = "Whether to auto-generate shell aliases for entering containers.";
+      description = "Shell alias for entering containers.";
     };
     containers = mkOption {
       type = types.attrsOf (
@@ -38,7 +38,7 @@ in
                 enable = mkOption {
                   type = types.bool;
                   default = true;
-                  description = "Whether to auto-generate a shell alias for this container.";
+                  description = "Shell alias for this container.";
                 };
                 name = mkOption {
                   type = types.str;
