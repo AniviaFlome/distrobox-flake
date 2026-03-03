@@ -19,7 +19,7 @@ let
     ]
     ++ optional (
       packages != [ ]
-    ) "sudo pacman -S --needed --noconfirm ${concatStringsSep " " packages}";
+    ) "sudo pacman -S --needed --noconfirm ${escapeShellArgs packages}";
 in
 {
   options.chaotic-aur = {

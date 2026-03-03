@@ -18,7 +18,7 @@ let
     aurPkgs:
     optionals (aurPkgs != [ ]) [
       "command -v paru > /dev/null 2>&1 || (${paruBootstrapCmd})"
-      "sudo -u $USER paru -S --needed --noconfirm ${concatStringsSep " " aurPkgs}"
+      "sudo -u $USER paru -S --needed --noconfirm ${escapeShellArgs aurPkgs}"
     ];
 in
 {
