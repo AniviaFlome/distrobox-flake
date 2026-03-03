@@ -27,6 +27,8 @@ Add the flake input:
 ## Example Config
 
 ```nix
+{ pkgs, ... }:
+
 {
   imports = [ inputs.distrobox-flake.homeManagerModules.default ];
 
