@@ -13,7 +13,7 @@ let
     let
       pkgs = rpmCfg.free.packages ++ rpmCfg.unfree.packages;
     in
-    optional (pkgs != [ ]) "sudo dnf install -y ${concatStringsSep " " pkgs}";
+    optional (pkgs != [ ]) "sudo dnf install -y ${escapeShellArgs pkgs}";
 in
 {
   options.rpmfusion = {
