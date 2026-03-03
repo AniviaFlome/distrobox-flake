@@ -6,7 +6,7 @@ let
   coprPreHooks = repos: map (repo: "sudo dnf copr enable -y ${repo}") repos;
 
   coprInstallHook =
-    packages: optional (packages != [ ]) "sudo dnf install -y ${concatStringsSep " " packages}";
+    packages: optional (packages != [ ]) "sudo dnf install -y ${escapeShellArgs packages}";
 in
 {
   options.copr = {
