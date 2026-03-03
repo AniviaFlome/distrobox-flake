@@ -31,6 +31,7 @@
 
       checks = forAllSystems (system: {
         formatting = treefmtEval.${system}.config.build.check self;
+        test-aur = import ./tests/test_aur.nix { pkgs = nixpkgs.legacyPackages.${system}; };
       });
 
       homeManagerModules = {
