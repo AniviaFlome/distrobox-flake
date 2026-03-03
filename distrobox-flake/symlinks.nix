@@ -5,7 +5,9 @@ with lib;
 let
   linkFilesHook =
     symlinks:
-    mapAttrsToList (target: source: ''sudo mkdir -p "$(dirname "${target}")" && sudo ln -sf "${source}" "${target}"'') symlinks;
+    mapAttrsToList (
+      target: source: ''sudo mkdir -p "$(dirname "${target}")" && sudo ln -sf "${source}" "${target}"''
+    ) symlinks;
 in
 {
   options.symlinks = mkOption {

@@ -5,7 +5,10 @@ with lib;
 let
   linkPackagesHook =
     packages:
-    map (pkg: ''[ ! -d "${pkg}/bin" ] || sudo find "${pkg}/bin" -mindepth 1 -maxdepth 1 \( -type f -executable -o -type l \) -exec sudo ln -sf {} /usr/local/bin/ \;'') packages;
+    map (
+      pkg:
+      ''[ ! -d "${pkg}/bin" ] || sudo find "${pkg}/bin" -mindepth 1 -maxdepth 1 \( -type f -executable -o -type l \) -exec sudo ln -sf {} /usr/local/bin/ \;''
+    ) packages;
 in
 {
   options.packages = mkOption {
