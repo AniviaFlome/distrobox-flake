@@ -31,7 +31,7 @@
 
       checks = forAllSystems (system: {
         formatting = treefmtEval.${system}.config.build.check self;
-        eval-tests = import ./tests/eval-tests.nix { pkgs = nixpkgs.legacyPackages.${system}; };
+        test-default = import ./tests/test_default.nix { pkgs = nixpkgs.legacyPackages.${system}; };
         test-aur = import ./tests/test_aur.nix { pkgs = nixpkgs.legacyPackages.${system}; };
       });
 
