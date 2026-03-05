@@ -1,7 +1,5 @@
 { config, lib, ... }:
 
-with lib;
-
 let
   featureFiles = [
     ./aur.nix
@@ -18,30 +16,32 @@ let
 
   mkFeatureConfig =
     feature:
-    mapAttrs (_: feature.mkContainerConfig) (filterAttrs (_: feature.hasFeature) cfg.containers);
+    lib.mapAttrs (_: feature.mkContainerConfig) (
+      lib.filterAttrs (_: feature.hasFeature) cfg.containers
+    );
 in
 {
   options.programs.distrobox-flake = {
-    enable = mkEnableOption "distrobox-flake integration";
-    alias.enable = mkOption {
-      type = types.bool;
+    enable = lib.mkEnableOption "distrobox-flake integration";
+    alias.enable = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = "Shell alias for entering containers.";
     };
-    containers = mkOption {
-      type = types.attrsOf (
-        types.submodule (
+    containers = lib.mkOption {
+      type = lib.types.attrsOf (
+        lib.types.submodule (
           { name, ... }:
           {
             options = (lib.foldl' lib.recursiveUpdate { } (map (f: f.options) features)) // {
               alias = {
-                enable = mkOption {
-                  type = types.bool;
+                enable = lib.mkOption {
+                  type = lib.types.bool;
                   default = true;
                   description = "Shell alias for this container.";
                 };
-                name = mkOption {
-                  type = types.str;
+                name = lib.mkOption {
+                  type = lib.types.str;
                   default = name;
                   description = "Alias used to enter the container. Defaults to the container's name.";
                 };
@@ -55,12 +55,14 @@ in
     };
   };
 
-  config = mkIf cfg.enable (mkMerge [
-    { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
-    (mkIf cfg.alias.enable {
-      home.shellAliases = mapAttrs' (
-        name: containerCfg: nameValuePair containerCfg.alias.name "distrobox enter ${name}"
-      ) (filterAttrs (_: c: c.alias.enable) cfg.containers);
-    })
-  ]);
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
+      (lib.mkIf cfg.alias.enable {
+        home.shellAliases = lib.mapAttrs' (
+          name: containerCfg: lib.nameValuePair containerCfg.alias.name "distrobox enter ${name}"
+        ) (lib.filterAttrs (_: c: c.alias.enable) cfg.containers);
+      })
+    ]
+  );
 }
