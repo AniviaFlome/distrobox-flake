@@ -8,6 +8,8 @@ let
     ./chaotic-aur.nix
     ./copr.nix
     ./rpmfusion.nix
+    ./packages.nix
+    ./symlinks.nix
   ];
 
   features = map (f: import f { inherit lib; }) featureFiles;
@@ -21,7 +23,11 @@ in
 {
   options.programs.distrobox-flake = {
     enable = mkEnableOption "distrobox-flake integration";
-    alias.enable = mkEnableOption "auto-generated shell alias for entering containers";
+    alias.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Shell alias for entering containers.";
+    };
     containers = mkOption {
       type = types.attrsOf (
         types.submodule (
@@ -32,7 +38,7 @@ in
                 enable = mkOption {
                   type = types.bool;
                   default = true;
-                  description = "Whether to enable a shell alias for this container.";
+                  description = "Shell alias for this container.";
                 };
                 name = mkOption {
                   type = types.str;

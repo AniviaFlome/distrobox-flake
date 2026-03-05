@@ -8,6 +8,8 @@ Extension module for [home-manager](https://github.com/nix-community/home-manage
 - **Chaotic AUR** (Arch) — sets up the [Chaotic AUR](https://aur.chaotic.cx/) repository and installs packages
 - **COPR repos** (Fedora) — enables COPR repositories and installs packages from them
 - **RPM Fusion** (Fedora) — enables free and/or nonfree RPM Fusion repositories
+- **Nix Packages** (All) — symlinks the `bin/` directory of Nix packages into the container
+- **File Symlinks** (All) — creates arbitrary file symlinks into the container
 
 ## Installation
 
@@ -25,6 +27,8 @@ Add the flake input:
 ## Example Config
 
 ```nix
+{ pkgs, ... }:
+
 {
   imports = [ inputs.distrobox-flake.homeManagerModules.default ];
 
@@ -44,6 +48,10 @@ Add the flake input:
 
   programs.distrobox-flake.containers = {
     arch = {
+      packages = [ pkgs.hello ];
+      symlinks = {
+        "/etc/localtime" = "/var/host/etc/localtime";
+      };
       aur = {
         enable = true;
         packages = [ "visual-studio-code-bin" ];
@@ -56,8 +64,14 @@ Add the flake input:
         packages = [ "starship" ];
       };
       rpmfusion = {
-        free = true;
-        nonfree = true;
+        free = {
+          enable = true;
+          packages = [ "ffmpeg" ];
+        };
+        unfree = {
+          enable = true;
+          packages = [ "steam" ];
+        };
       };
     };
   };
