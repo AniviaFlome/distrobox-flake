@@ -33,6 +33,7 @@
         formatting = treefmtEval.${system}.config.build.check self;
         eval-tests = import ./tests/eval-tests.nix { pkgs = nixpkgs.legacyPackages.${system}; };
         test-aur = import ./tests/test_aur.nix { pkgs = nixpkgs.legacyPackages.${system}; };
+        test-symlinks = import ./tests/test_symlinks.nix { pkgs = nixpkgs.legacyPackages.${system}; };
       });
 
       homeManagerModules = {
