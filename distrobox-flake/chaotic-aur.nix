@@ -1,9 +1,7 @@
 { lib }:
 
-with lib;
-
 let
-  chaoticSetupCmd = concatStringsSep " && " [
+  chaoticSetupCmd = lib.concatStringsSep " && " [
     "sudo pacman-key --recv-key 3056513887B78AEB --keyserver keyserver.ubuntu.com"
     "sudo pacman-key --lsign-key 3056513887B78AEB"
     "sudo pacman -U --noconfirm 'https://cdn-mirror.chaotic.cx/chaotic-aur/chaotic-keyring.pkg.tar.zst'"
@@ -17,16 +15,16 @@ let
     [
       ''grep -q '^\[chaotic-aur\]' /etc/pacman.conf || (${chaoticSetupCmd})''
     ]
-    ++ optional (
+    ++ lib.optional (
       packages != [ ]
-    ) "sudo pacman -S --needed --noconfirm ${escapeShellArgs packages}";
+    ) "sudo pacman -S --needed --noconfirm ${lib.escapeShellArgs packages}";
 in
 {
   options.chaotic-aur = {
-    enable = mkEnableOption "Chaotic AUR repository support (Arch containers only)";
+    enable = lib.mkEnableOption "Chaotic AUR repository support (Arch containers only)";
 
-    packages = mkOption {
-      type = types.listOf types.str;
+    packages = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Packages to install from the Chaotic AUR repository.";
       example = [

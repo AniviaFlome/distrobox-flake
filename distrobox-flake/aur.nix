@@ -1,9 +1,7 @@
 { lib }:
 
-with lib;
-
 let
-  paruBootstrapCmd = concatStringsSep " && " [
+  paruBootstrapCmd = lib.concatStringsSep " && " [
     "sudo pacman -Syu --noconfirm"
     "sudo pacman -S --needed --noconfirm base-devel git"
     "rm -rf /tmp/paru-bootstrap"
@@ -16,17 +14,17 @@ let
 
   aurInitHooks =
     aurPkgs:
-    optionals (aurPkgs != [ ]) [
+    lib.optionals (aurPkgs != [ ]) [
       "command -v paru > /dev/null 2>&1 || (${paruBootstrapCmd})"
-      "sudo -u $USER paru -S --needed --noconfirm ${escapeShellArgs aurPkgs}"
+      "sudo -u $USER paru -S --needed --noconfirm ${lib.escapeShellArgs aurPkgs}"
     ];
 in
 {
   options.aur = {
-    enable = mkEnableOption "AUR package support (Arch containers only)";
+    enable = lib.mkEnableOption "AUR package support (Arch containers only)";
 
-    packages = mkOption {
-      type = types.listOf types.str;
+    packages = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "AUR packages to install. Paru is bootstrapped automatically.";
       example = [
