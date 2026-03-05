@@ -3,7 +3,7 @@
 let
   inherit (pkgs) lib;
 
-  # Create a minimal evaluation wrapper to test the aur.nix file
+  # Create a minimal evaluation wrapper to test the chaotic-aur.nix file
   evalModule =
     packages:
     lib.evalModules {
@@ -31,8 +31,8 @@ let
           {
             programs.distrobox-flake.enable = true;
             programs.distrobox-flake.containers.test = {
-              aur.enable = true;
-              aur.packages = packages;
+              chaotic-aur.enable = true;
+              chaotic-aur.packages = packages;
             };
           }
         )
@@ -52,19 +52,18 @@ let
   assertMsg = cond: msg: if cond then true else builtins.trace "FAIL: ${msg}" false;
 
   tests = [
-    (assertMsg (emptyHooks == [ ]) "empty packages should result in empty init_hooks")
+    (assertMsg (builtins.length emptyHooks == 1) "empty packages should result in 1 init_hook")
     (assertMsg (builtins.length packagesHooks == 2) "non-empty packages should result in 2 init_hooks")
     (assertMsg (
-      builtins.match ".*sudo -u \\$USER paru -S --needed --noconfirm foo bar.*" (
-        builtins.elemAt packagesHooks 1
-      ) != null
-    ) "the package list should be included in the paru command")
+      builtins.match ".*sudo pacman -S --needed --noconfirm foo bar.*" (builtins.elemAt packagesHooks 1)
+      != null
+    ) "the package list should be included in the pacman command")
   ];
 
   allPass = builtins.all (x: x) tests;
 in
 if allPass then
-  pkgs.runCommand "test-aur" { } ''
+  pkgs.runCommand "test-chaotic-aur" { } ''
     echo "All tests passed" > $out
   ''
 else
