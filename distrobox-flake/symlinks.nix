@@ -6,7 +6,8 @@ let
   linkFilesHook =
     symlinks:
     mapAttrsToList (
-      target: source: ''sudo mkdir -p "$(dirname "${target}")" && sudo ln -sf "${source}" "${target}"''
+      target: source:
+      ''sudo mkdir -p "$(dirname ${escapeShellArg target})" && sudo ln -sf ${escapeShellArg source} ${escapeShellArg target}''
     ) symlinks;
 in
 {
