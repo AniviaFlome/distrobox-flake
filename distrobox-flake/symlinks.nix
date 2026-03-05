@@ -1,17 +1,15 @@
 { lib }:
 
-with lib;
-
 let
   linkFilesHook =
     symlinks:
-    mapAttrsToList (
+    lib.mapAttrsToList (
       target: source: ''sudo mkdir -p "$(dirname "${target}")" && sudo ln -sf "${source}" "${target}"''
     ) symlinks;
 in
 {
-  options.symlinks = mkOption {
-    type = types.attrsOf (types.either types.path types.str);
+  options.symlinks = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.either lib.types.path lib.types.str);
     default = { };
     description = "A mapping of target path in the container to source path. The source path will be symlinked to the target path inside the container.";
     example = {
