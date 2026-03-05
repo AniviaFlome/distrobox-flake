@@ -17,9 +17,7 @@ let
     [
       ''grep -q '^\[chaotic-aur\]' /etc/pacman.conf || (${chaoticSetupCmd})''
     ]
-    ++ optional (
-      packages != [ ]
-    ) "sudo pacman -S --needed --noconfirm ${escapeShellArgs packages}";
+    ++ optional (packages != [ ]) "sudo pacman -S --needed --noconfirm ${escapeShellArgs packages}";
 in
 {
   options.chaotic-aur = {
