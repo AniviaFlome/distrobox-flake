@@ -15,11 +15,11 @@ let
   chaoticInitHooks =
     packages:
     [
-      "grep -q '^\[chaotic-aur\]' /etc/pacman.conf || (${chaoticSetupCmd})"
+      ''grep -q '^\[chaotic-aur\]' /etc/pacman.conf || (${chaoticSetupCmd})''
     ]
     ++ optional (
       packages != [ ]
-    ) "sudo pacman -S --needed --noconfirm ${concatStringsSep " " packages}";
+    ) "sudo pacman -S --needed --noconfirm ${escapeShellArgs packages}";
 in
 {
   options.chaotic-aur = {
