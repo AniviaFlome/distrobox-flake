@@ -1,7 +1,5 @@
 { lib }:
 
-with lib;
-
 let
   linkPackagesHook =
     packages:
@@ -11,8 +9,8 @@ let
     ) packages;
 in
 {
-  options.packages = mkOption {
-    type = types.listOf types.package;
+  options.packages = lib.mkOption {
+    type = lib.types.listOf lib.types.package;
     default = [ ];
     description = "Nix packages to symlink into the container. The contents of their `bin/` directories will be symlinked to `/usr/local/bin/` inside the container.";
   };

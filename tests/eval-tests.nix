@@ -49,15 +49,15 @@ let
   };
 
   # Check logic
-  assert1 =
-    lib.asserts.assertMsg (cfg.home.shellAliases == expectedAliases)
-      "Shell aliases do not match expected";
-  assert2 =
-    lib.asserts.assertMsg (cfg.programs.distrobox.containers ? my-container)
-      "my-container missing from distrobox.containers";
-  assert3 =
-    lib.asserts.assertMsg (cfg.programs.distrobox.containers ? no-alias-container)
-      "no-alias-container missing from distrobox.containers";
+  assert1 = lib.asserts.assertMsg (
+    cfg.home.shellAliases == expectedAliases
+  ) "Shell aliases do not match expected";
+  assert2 = lib.asserts.assertMsg (
+    cfg.programs.distrobox.containers ? my-container
+  ) "my-container missing from distrobox.containers";
+  assert3 = lib.asserts.assertMsg (
+    cfg.programs.distrobox.containers ? no-alias-container
+  ) "no-alias-container missing from distrobox.containers";
 in
 if assert1 && assert2 && assert3 then
   pkgs.runCommand "eval-tests" { } ''
