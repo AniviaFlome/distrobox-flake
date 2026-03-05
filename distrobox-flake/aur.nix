@@ -6,11 +6,12 @@ let
   paruBootstrapCmd = concatStringsSep " && " [
     "sudo pacman -Syu --noconfirm"
     "sudo pacman -S --needed --noconfirm base-devel git"
-    "rm -rf /tmp/paru-bootstrap"
-    "sudo -u $USER git clone https://aur.archlinux.org/paru.git /tmp/paru-bootstrap"
-    "cd /tmp/paru-bootstrap"
-    "sudo -u $USER makepkg -si --noconfirm"
-    "rm -rf /tmp/paru-bootstrap"
+    "tempdir=$(sudo -u \"$USER\" mktemp -d)"
+    "sudo -u \"$USER\" git clone https://aur.archlinux.org/paru.git \"$tempdir\""
+    "cd \"$tempdir\""
+    "sudo -u \"$USER\" makepkg -si --noconfirm"
+    "cd /"
+    "rm -rf \"$tempdir\""
     "sudo ldconfig"
   ];
 
@@ -18,7 +19,7 @@ let
     aurPkgs:
     optionals (aurPkgs != [ ]) [
       "command -v paru > /dev/null 2>&1 || (${paruBootstrapCmd})"
-      "sudo -u $USER paru -S --needed --noconfirm ${escapeShellArgs aurPkgs}"
+      "sudo -u \"$USER\" paru -S --needed --noconfirm ${escapeShellArgs aurPkgs}"
     ];
 in
 {
