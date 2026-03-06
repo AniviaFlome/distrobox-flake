@@ -1,26 +1,24 @@
 { lib }:
 
-with lib;
-
 let
-  coprPreHooks = repos: map (repo: "sudo dnf copr enable -y ${escapeShellArg repo}") repos;
+  coprPreHooks = repos: map (repo: "sudo dnf copr enable -y ${lib.escapeShellArg repo}") repos;
 
   coprInstallHook =
-    packages: optional (packages != [ ]) "sudo dnf install -y ${escapeShellArgs packages}";
+    packages: lib.optional (packages != [ ]) "sudo dnf install -y ${lib.escapeShellArgs packages}";
 in
 {
   options.copr = {
-    enable = mkEnableOption "COPR repository support (Fedora containers only)";
+    enable = lib.mkEnableOption "COPR repository support (Fedora containers only)";
 
-    repos = mkOption {
-      type = types.listOf types.str;
+    repos = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "COPR repositories to enable. Enabled before package installation.";
       example = [ "atim/starship" ];
     };
 
-    packages = mkOption {
-      type = types.listOf types.str;
+    packages = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Packages to install from COPR repositories.";
       example = [ "starship" ];
