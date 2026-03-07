@@ -33,6 +33,7 @@
         formatting = treefmtEval.${system}.config.build.check self;
         eval-tests = import ./tests/eval-tests.nix { pkgs = nixpkgs.legacyPackages.${system}; };
         test-aur = import ./tests/test_aur.nix { pkgs = nixpkgs.legacyPackages.${system}; };
+        rpmfusion-tests = import ./tests/rpmfusion.nix { pkgs = nixpkgs.legacyPackages.${system}; };
       });
 
       homeManagerModules = {
