@@ -52,7 +52,7 @@ let
     (assertMsg (emptyHooks == [ ]) "empty packages should result in empty init_hooks")
     (assertMsg (builtins.length packagesHooks == 2) "non-empty packages should result in 2 init_hooks")
     (assertMsg (
-      builtins.match ".*sudo -u \\$USER paru -S --needed --noconfirm foo bar.*" (
+      builtins.match ".*sudo -u \"\\$USER\" paru -S --needed --noconfirm foo bar.*" (
         builtins.elemAt packagesHooks 1
       ) != null
     ) "the package list should be included in the paru command")
