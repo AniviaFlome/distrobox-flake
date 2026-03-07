@@ -38,6 +38,7 @@
           eval-tests = import ./tests/eval-tests.nix { inherit pkgs; };
           test-aur = import ./tests/test_aur.nix { inherit pkgs; };
           test-packages = import ./tests/test_packages.nix { inherit pkgs; };
+          test-chaotic-aur = import ./tests/test_chaotic_aur.nix { inherit pkgs; };
           rpmfusion-tests = import ./tests/rpmfusion.nix { inherit pkgs; };
           copr-tests = if coprTestResults == [ ] then
               pkgs.runCommand "copr-tests-passed" { } "touch $out"
