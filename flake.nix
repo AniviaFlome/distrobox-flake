@@ -33,23 +33,11 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          coprTestResults = import ./tests/default.nix { inherit (nixpkgs) lib; };
         in
         {
           formatting = treefmtEval.${system}.config.build.check self;
-          test-default = import ./tests/test_default.nix { inherit pkgs; };
-          test-aur = import ./tests/test_aur.nix { inherit pkgs; };
-          test-packages = import ./tests/test_packages.nix { inherit pkgs; };
-          test-chaotic-aur = import ./tests/test_chaotic_aur.nix { inherit pkgs; };
-          test-symlinks = import ./tests/test_symlinks.nix { inherit pkgs; };
-          test-copr = import ./tests/test_copr.nix { inherit pkgs; };
-          test-rpmfusion = import ./tests/test_rpmfusion.nix { inherit pkgs; };
-          test-copr-pure =
-            if coprTestResults == [ ] then
-              pkgs.runCommand "copr-tests-passed" { } "touch $out"
-            else
-              throw "COPR tests failed: ${builtins.toJSON coprTestResults}";
         }
+        // import ./tests/default.nix { inherit pkgs; }
       );
 
       homeManagerModules = {
