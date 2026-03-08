@@ -26,16 +26,13 @@ let
           }
         )
         ../distrobox-flake/default.nix
-        (
-          _:
-          {
-            programs.distrobox-flake.enable = true;
-            programs.distrobox-flake.containers.test = {
-              chaotic-aur.enable = true;
-              chaotic-aur.packages = packages;
-            };
-          }
-        )
+        (_: {
+          programs.distrobox-flake.enable = true;
+          programs.distrobox-flake.containers.test = {
+            chaotic-aur.enable = true;
+            chaotic-aur.packages = packages;
+          };
+        })
       ];
     };
 

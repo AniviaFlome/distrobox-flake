@@ -29,11 +29,13 @@
     {
       formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
 
-      checks = forAllSystems (system:
+      checks = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           coprTestResults = import ./tests/default.nix { inherit (nixpkgs) lib; };
-        in {
+        in
+        {
           formatting = treefmtEval.${system}.config.build.check self;
           test-default = import ./tests/test_default.nix { inherit pkgs; };
           test-aur = import ./tests/test_aur.nix { inherit pkgs; };
@@ -42,11 +44,13 @@
           test-symlinks = import ./tests/test_symlinks.nix { inherit pkgs; };
           test-copr = import ./tests/test_copr.nix { inherit pkgs; };
           rpmfusion-tests = import ./tests/rpmfusion.nix { inherit pkgs; };
-          copr-tests = if coprTestResults == [ ] then
+          copr-tests =
+            if coprTestResults == [ ] then
               pkgs.runCommand "copr-tests-passed" { } "touch $out"
             else
               throw "COPR tests failed: ${builtins.toJSON coprTestResults}";
-        });
+        }
+      );
 
       homeManagerModules = {
         distrobox-flake = import ./distrobox-flake;

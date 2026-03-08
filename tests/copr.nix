@@ -16,7 +16,10 @@ lib.runTests {
   };
 
   testCoprPreHooksMultiple = {
-    expr = copr._coprPreHooks [ "atim/starship" "ngompa/snapd" ];
+    expr = copr._coprPreHooks [
+      "atim/starship"
+      "ngompa/snapd"
+    ];
     expected = [
       "sudo dnf copr enable -y atim/starship"
       "sudo dnf copr enable -y ngompa/snapd"
@@ -34,7 +37,10 @@ lib.runTests {
   };
 
   testCoprInstallHookMultiple = {
-    expr = copr._coprInstallHook [ "starship" "snapd" ];
+    expr = copr._coprInstallHook [
+      "starship"
+      "snapd"
+    ];
     expected = [ "sudo dnf install -y starship snapd" ];
   };
 

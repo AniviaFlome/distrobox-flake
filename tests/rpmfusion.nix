@@ -65,8 +65,8 @@ let
       };
       expected = {
         pre_init_hooks = [
-          "sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm || true"
-          "sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm || true"
+          "test -f /etc/yum.repos.d/rpmfusion-free.repo || sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
+          "test -f /etc/yum.repos.d/rpmfusion-nonfree.repo || sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
         ];
         init_hooks = [
           "sudo dnf install -y vlc ffmpeg steam"
@@ -89,7 +89,7 @@ let
       };
       expected = {
         pre_init_hooks = [
-          "sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm || true"
+          "test -f /etc/yum.repos.d/rpmfusion-free.repo || sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
         ];
         init_hooks = [ ];
       };
@@ -110,7 +110,7 @@ let
       };
       expected = {
         pre_init_hooks = [
-          "sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm || true"
+          "test -f /etc/yum.repos.d/rpmfusion-nonfree.repo || sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
         ];
         init_hooks = [ ];
       };

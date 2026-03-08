@@ -50,8 +50,8 @@ let
   # We use lib.any or manually check since the generated hooks order might vary if mapAttrsToList is used,
   # but actually mapAttrsToList returns list sorted by key or similar? No, let's just check length and elements.
 
-  expectedHook1 = ''sudo mkdir -p "$(dirname "/etc/localtime")" && sudo ln -sf "/var/host/etc/localtime" "/etc/localtime"'';
-  expectedHook2 = ''sudo mkdir -p "$(dirname "/usr/bin/custom-script")" && sudo ln -sf "/home/user/scripts/custom-script.sh" "/usr/bin/custom-script"'';
+  expectedHook1 = ''sudo mkdir -p "$(dirname ${lib.escapeShellArg "/etc/localtime"})" && sudo ln -sf ${lib.escapeShellArg "/var/host/etc/localtime"} ${lib.escapeShellArg "/etc/localtime"}'';
+  expectedHook2 = ''sudo mkdir -p "$(dirname ${lib.escapeShellArg "/usr/bin/custom-script"})" && sudo ln -sf ${lib.escapeShellArg "/home/user/scripts/custom-script.sh"} ${lib.escapeShellArg "/usr/bin/custom-script"}'';
 
   tests = [
     (assertMsg (emptyHooks == [ ]) "empty symlinks should result in empty init_hooks")
