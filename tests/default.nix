@@ -1,6 +1,6 @@
 { lib }:
 
 let
-  coprTests = import ./copr.nix { inherit lib; };
+  coprTests = import ./test_copr_pure.nix { inherit lib; };
 in
 coprTests
