@@ -35,7 +35,7 @@
           coprTestResults = import ./tests/default.nix { inherit (nixpkgs) lib; };
         in {
           formatting = treefmtEval.${system}.config.build.check self;
-          eval-tests = import ./tests/eval-tests.nix { inherit pkgs; };
+          test-default = import ./tests/test_default.nix { inherit pkgs; };
           test-aur = import ./tests/test_aur.nix { inherit pkgs; };
           test-packages = import ./tests/test_packages.nix { inherit pkgs; };
           test-chaotic-aur = import ./tests/test_chaotic_aur.nix { inherit pkgs; };
