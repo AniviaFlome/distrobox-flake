@@ -1,52 +1,30 @@
 { pkgs }:
 
 let
-  inherit (pkgs) lib;
+  testLib = import ./lib.nix { inherit pkgs; };
+  inherit (testLib) mkEvalModule assertMsg;
 
-  # Create a minimal evaluation wrapper to test the aur.nix file
-  evalModule =
-    packages:
-    lib.evalModules {
-      modules = [
-        # Dummy programs.distrobox definition to avoid errors
-        (
-          { lib, ... }:
-          {
-            options.programs.distrobox = {
-              enable = lib.mkEnableOption "dummy";
-              containers = lib.mkOption {
-                type = lib.types.attrs;
-                default = { };
-              };
-            };
-            options.home.shellAliases = lib.mkOption {
-              type = lib.types.attrs;
-              default = { };
-            };
-          }
-        )
-        ../distrobox-flake/default.nix
-        (_: {
-          programs.distrobox-flake.enable = true;
-          programs.distrobox-flake.containers.test = {
-            aur.enable = true;
-            aur.packages = packages;
-          };
-        })
+  emptyConfig = mkEvalModule {
+    programs.distrobox-flake.enable = true;
+    programs.distrobox-flake.containers.test = {
+      aur.enable = true;
+      aur.packages = [ ];
+    };
+  };
+
+  packagesConfig = mkEvalModule {
+    programs.distrobox-flake.enable = true;
+    programs.distrobox-flake.containers.test = {
+      aur.enable = true;
+      aur.packages = [
+        "foo"
+        "bar"
       ];
     };
+  };
 
-  emptyConfig = evalModule [ ];
-  packagesConfig = evalModule [
-    "foo"
-    "bar"
-  ];
-
-  # The output hooks are stored in programs.distrobox.containers.test.init_hooks
-  emptyHooks = emptyConfig.config.programs.distrobox.containers.test.init_hooks or [ ];
-  packagesHooks = packagesConfig.config.programs.distrobox.containers.test.init_hooks or [ ];
-
-  assertMsg = cond: msg: if cond then true else builtins.trace "FAIL: ${msg}" false;
+  emptyHooks = emptyConfig.programs.distrobox.containers.test.init_hooks or [ ];
+  packagesHooks = packagesConfig.programs.distrobox.containers.test.init_hooks or [ ];
 
   tests = [
     (assertMsg (emptyHooks == [ ]) "empty packages should result in empty init_hooks")

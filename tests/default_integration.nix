@@ -3,96 +3,72 @@
 }:
 
 let
-  inherit (pkgs) lib;
+  testLib = import ./lib.nix { inherit pkgs; };
+  inherit (testLib) mkEvalModule assertMsg;
 
-  evalModule =
-    configOptions:
-    lib.evalModules {
-      modules = [
-        # Mock home-manager environment options needed by the module
-        (
-          { lib, ... }:
-          {
-            options.programs.distrobox = {
-              enable = lib.mkEnableOption "dummy";
-              containers = lib.mkOption {
-                type = lib.types.attrs;
-                default = { };
-              };
-            };
-            options.home.shellAliases = lib.mkOption {
-              type = lib.types.attrs;
-              default = { };
-            };
-          }
-        )
-        ../distrobox-flake/default.nix
-        (_: configOptions)
-      ];
+  cfg = mkEvalModule {
+    programs.distrobox-flake = {
+      enable = true;
+      alias.enable = true;
+      containers = {
+        container-a = {
+          aur.enable = true;
+          aur.packages = [ "some-pkg" ];
+          # default alias name "container-a"
+        };
+        container-b = {
+          aur.enable = true;
+          aur.packages = [ "some-pkg" ];
+          alias.enable = false;
+        };
+        container-c = {
+          aur.enable = true;
+          aur.packages = [ "some-pkg" ];
+          alias.name = "custom-c";
+        };
+        container-d = {
+          aur.enable = true;
+          aur.packages = [ "some-pkg" ];
+          alias = {
+            enable = true;
+            name = "custom-d";
+          };
+        };
+      };
     };
+  };
 
-  cfg =
-    (evalModule {
-      programs.distrobox-flake = {
-        enable = true;
-        alias.enable = true;
-        containers = {
-          container-a = {
-            aur.enable = true;
-            # default alias name "container-a"
-          };
-          container-b = {
-            aur.enable = true;
-            alias.enable = false;
-          };
-          container-c = {
-            aur.enable = true;
-            alias.name = "custom-c";
-          };
-          container-d = {
-            aur.enable = true;
-            alias = {
-              enable = true;
-              name = "custom-d";
-            };
-          };
+  cfgNoGlobalAlias = mkEvalModule {
+    programs.distrobox-flake = {
+      enable = true;
+      alias.enable = false;
+      containers = {
+        container-a = {
+          aur.enable = true;
+          aur.packages = [ "some-pkg" ];
         };
       };
-    }).config;
+    };
+  };
 
-  cfgNoGlobalAlias =
-    (evalModule {
-      programs.distrobox-flake = {
-        enable = true;
-        alias.enable = false;
-        containers = {
-          container-a = {
-            aur.enable = true;
-          };
+  cfgDisabled = mkEvalModule {
+    programs.distrobox-flake = {
+      enable = false;
+      alias.enable = true;
+      containers = {
+        container-a = {
+          aur.enable = true;
+          aur.packages = [ "some-pkg" ];
         };
       };
-    }).config;
-
-  cfgDisabled =
-    (evalModule {
-      programs.distrobox-flake = {
-        enable = false;
-        alias.enable = true;
-        containers = {
-          container-a = {
-            aur.enable = true;
-          };
-        };
-      };
-    }).config;
+    };
+  };
 
   expectedAliases = {
     "container-a" = "distrobox enter container-a";
     "custom-c" = "distrobox enter container-c";
     "custom-d" = "distrobox enter container-d";
   };
-
-  assertMsg = cond: msg: if cond then true else builtins.trace "FAIL: ${msg}" false;
 
   tests = [
     # Verify alias generation logic
@@ -130,8 +106,7 @@ let
 in
 if allPass then
   pkgs.runCommand "test-default" { } ''
-    echo "All evaluation tests passed!"
-    touch $out
+    echo "All tests passed" > $out
   ''
 else
-  builtins.abort "Tests failed!"
+  builtins.abort "Tests failed"

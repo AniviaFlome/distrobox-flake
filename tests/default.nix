@@ -8,5 +8,5 @@
   test-symlinks = import ./symlinks.nix { inherit pkgs; };
   test-copr = import ./copr_integration.nix { inherit pkgs; };
   test-rpmfusion = import ./rpmfusion.nix { inherit pkgs; };
-  test-copr-pure = import ./copr_pure.nix { inherit pkgs; };
+  test-export = import ./export.nix { inherit pkgs; };
 }

@@ -1,59 +1,34 @@
 { pkgs }:
 
 let
-  inherit (pkgs) lib;
+  testLib = import ./lib.nix { inherit pkgs; };
+  inherit (testLib) mkEvalModule assertMsg;
 
-  # Create a minimal evaluation wrapper to test the copr.nix file
-  evalModule =
+  mkCoprConfig =
     repos: packages:
-    lib.evalModules {
-      modules = [
-        # Dummy programs.distrobox definition to avoid errors
-        (
-          { lib, ... }:
-          {
-            options.programs.distrobox = {
-              enable = lib.mkEnableOption "dummy";
-              containers = lib.mkOption {
-                type = lib.types.attrs;
-                default = { };
-              };
-            };
-            options.home.shellAliases = lib.mkOption {
-              type = lib.types.attrs;
-              default = { };
-            };
-          }
-        )
-        ../distrobox-flake/default.nix
-        (_: {
-          programs.distrobox-flake.enable = true;
-          programs.distrobox-flake.containers.test = {
-            copr.enable = true;
-            copr.repos = repos;
-            copr.packages = packages;
-          };
-        })
-      ];
+    mkEvalModule {
+      programs.distrobox-flake.enable = true;
+      programs.distrobox-flake.containers.test = {
+        copr.enable = true;
+        copr.repos = repos;
+        copr.packages = packages;
+      };
     };
 
-  emptyConfig = evalModule [ ] [ ];
-  reposConfig = evalModule [ "atim/starship" "group/repo" ] [ ];
-  packagesConfig = evalModule [ ] [ "foo" "bar" ];
-  bothConfig = evalModule [ "atim/starship" ] [ "starship" ];
+  emptyConfig = mkCoprConfig [ ] [ ];
+  reposConfig = mkCoprConfig [ "atim/starship" "group/repo" ] [ ];
+  packagesConfig = mkCoprConfig [ ] [ "foo" "bar" ];
+  bothConfig = mkCoprConfig [ "atim/starship" ] [ "starship" ];
 
-  # The output hooks are stored in programs.distrobox.containers.test.pre_init_hooks and init_hooks
-  emptyPreHooks = emptyConfig.config.programs.distrobox.containers.test.pre_init_hooks or [ ];
-  emptyInitHooks = emptyConfig.config.programs.distrobox.containers.test.init_hooks or [ ];
+  emptyPreHooks = emptyConfig.programs.distrobox.containers.test.pre_init_hooks or [ ];
+  emptyInitHooks = emptyConfig.programs.distrobox.containers.test.init_hooks or [ ];
 
-  reposPreHooks = reposConfig.config.programs.distrobox.containers.test.pre_init_hooks or [ ];
+  reposPreHooks = reposConfig.programs.distrobox.containers.test.pre_init_hooks or [ ];
 
-  packagesInitHooks = packagesConfig.config.programs.distrobox.containers.test.init_hooks or [ ];
+  packagesInitHooks = packagesConfig.programs.distrobox.containers.test.init_hooks or [ ];
 
-  bothPreHooks = bothConfig.config.programs.distrobox.containers.test.pre_init_hooks or [ ];
-  bothInitHooks = bothConfig.config.programs.distrobox.containers.test.init_hooks or [ ];
-
-  assertMsg = cond: msg: if cond then true else builtins.trace "FAIL: ${msg}" false;
+  bothPreHooks = bothConfig.programs.distrobox.containers.test.pre_init_hooks or [ ];
+  bothInitHooks = bothConfig.programs.distrobox.containers.test.init_hooks or [ ];
 
   tests = [
     (assertMsg (emptyPreHooks == [ ]) "empty repos should result in empty pre_init_hooks")

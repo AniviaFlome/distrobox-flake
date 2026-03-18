@@ -1,57 +1,29 @@
 { pkgs }:
 
 let
-  inherit (pkgs) lib;
-
-  # Create a minimal evaluation wrapper to test the packages.nix file
-  evalModule =
-    packages:
-    lib.evalModules {
-      modules = [
-        # Dummy programs.distrobox definition to avoid errors
-        (
-          { lib, ... }:
-          {
-            options.programs.distrobox = {
-              enable = lib.mkEnableOption "dummy";
-              containers = lib.mkOption {
-                type = lib.types.attrs;
-                default = { };
-              };
-            };
-            options.home.shellAliases = lib.mkOption {
-              type = lib.types.attrs;
-              default = { };
-            };
-          }
-        )
-        ../distrobox-flake/default.nix
-        (_: {
-          programs.distrobox-flake.enable = true;
-          programs.distrobox-flake.containers.test = {
-            inherit packages;
-          };
-        })
-      ];
-    };
+  testLib = import ./lib.nix { inherit pkgs; };
+  inherit (testLib) mkEvalModule assertMsg;
 
   # Dummy packages to test with
   pkg1 = pkgs.runCommand "dummy-pkg1" { } "mkdir -p $out/bin; touch $out/bin/foo";
   pkg2 = pkgs.runCommand "dummy-pkg2" { } "mkdir -p $out/bin; touch $out/bin/bar";
 
-  emptyConfig = evalModule [ ];
-  packagesConfig = evalModule [
-    pkg1
-    pkg2
-  ];
+  emptyConfig = mkEvalModule {
+    programs.distrobox-flake.enable = true;
+    programs.distrobox-flake.containers.test.packages = [ ];
+  };
 
-  # The output hooks are stored in programs.distrobox.containers.test.init_hooks
-  emptyHooks = emptyConfig.config.programs.distrobox.containers.test.init_hooks or [ ];
-  packagesHooks = packagesConfig.config.programs.distrobox.containers.test.init_hooks or [ ];
+  packagesConfig = mkEvalModule {
+    programs.distrobox-flake.enable = true;
+    programs.distrobox-flake.containers.test.packages = [
+      pkg1
+      pkg2
+    ];
+  };
 
-  assertMsg = cond: msg: if cond then true else builtins.trace "FAIL: ${msg}" false;
+  emptyHooks = emptyConfig.programs.distrobox.containers.test.init_hooks or [ ];
+  packagesHooks = packagesConfig.programs.distrobox.containers.test.init_hooks or [ ];
 
-  # Expected string generation for package symlinking
   expectedHook1 = ''[ ! -d "${pkg1}/bin" ] || sudo find "${pkg1}/bin" -mindepth 1 -maxdepth 1 \( -type f -executable -o -type l \) -exec sudo ln -sf {} /usr/local/bin/ \;'';
   expectedHook2 = ''[ ! -d "${pkg2}/bin" ] || sudo find "${pkg2}/bin" -mindepth 1 -maxdepth 1 \( -type f -executable -o -type l \) -exec sudo ln -sf {} /usr/local/bin/ \;'';
 

@@ -39,5 +39,5 @@ in
     init_hooks = aurInitHooks containerCfg.aur.packages;
   };
 
-  hasFeature = containerCfg: containerCfg.aur.enable;
+  hasFeature = containerCfg: containerCfg.aur.enable && containerCfg.aur.packages != [ ];
 }

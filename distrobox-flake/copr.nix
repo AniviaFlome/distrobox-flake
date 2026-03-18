@@ -30,9 +30,7 @@ in
     init_hooks = coprInstallHook containerCfg.copr.packages;
   };
 
-  hasFeature = containerCfg: containerCfg.copr.enable;
-
-  # Exposed for testing
-  _coprPreHooks = coprPreHooks;
-  _coprInstallHook = coprInstallHook;
+  hasFeature =
+    containerCfg:
+    containerCfg.copr.enable && (containerCfg.copr.repos != [ ] || containerCfg.copr.packages != [ ]);
 }

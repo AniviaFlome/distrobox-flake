@@ -8,6 +8,7 @@ let
     ./rpmfusion.nix
     ./packages.nix
     ./symlinks.nix
+    ./export.nix
   ];
 
   features = map (f: import f { inherit lib; }) featureFiles;

@@ -1,6 +1,4 @@
-{
-  pkgs ? import <nixpkgs> { },
-}:
+{ pkgs }:
 
 let
   inherit (pkgs) lib;
@@ -139,6 +137,8 @@ let
   results = lib.runTests testCases;
 in
 if results == [ ] then
-  pkgs.runCommand "rpmfusion-tests-passed" { } "touch $out"
+  pkgs.runCommand "rpmfusion-tests-passed" { } ''
+    echo "All tests passed" > $out
+  ''
 else
   throw "rpmfusion tests failed: ${builtins.toJSON results}"

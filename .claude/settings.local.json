@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nix flake:*)",
+      "Bash(git add:*)",
+      "Bash(nix fmt:*)"
+    ]
+  }
+}
