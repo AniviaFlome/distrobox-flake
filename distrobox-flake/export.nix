@@ -6,7 +6,8 @@ let
   exportBinaryHooks =
     binaries:
     lib.mapAttrsToList (
-      bin: exportPath: "distrobox-export --bin ${lib.escapeShellArg bin} --export-path ${exportPath}"
+      bin: exportPath:
+      "distrobox-export --bin ${lib.escapeShellArg bin} --export-path ${lib.escapeShellArg exportPath}"
     ) binaries;
 in
 {

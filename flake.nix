@@ -41,7 +41,10 @@
       );
 
       homeManagerModules = {
-        distrobox-flake = import ./distrobox-flake;
+        distrobox-flake = [
+          (import ./distrobox-flake)
+          (import ./distrobox-flake/assemble.nix)
+        ];
         default = self.homeManagerModules.distrobox-flake;
       };
     };

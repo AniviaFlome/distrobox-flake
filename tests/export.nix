@@ -46,12 +46,12 @@ let
     (assertMsg (builtins.elem "distrobox-export --app org.gnome.Calculator" appsHooks) "org.gnome.Calculator app hook should be present")
 
     (assertMsg (builtins.length binariesHooks == 2) "two binaries should produce 2 hooks")
-    (assertMsg (builtins.elem "distrobox-export --bin /usr/bin/htop --export-path ~/.local/bin" binariesHooks) "htop binary hook should be present")
-    (assertMsg (builtins.elem "distrobox-export --bin /usr/bin/nvim --export-path ~/.local/bin" binariesHooks) "nvim binary hook should be present")
+    (assertMsg (builtins.elem "distrobox-export --bin /usr/bin/htop --export-path '~/.local/bin'" binariesHooks) "htop binary hook should be present")
+    (assertMsg (builtins.elem "distrobox-export --bin /usr/bin/nvim --export-path '~/.local/bin'" binariesHooks) "nvim binary hook should be present")
 
     (assertMsg (builtins.length bothHooks == 2) "one app + one binary should produce 2 hooks")
     (assertMsg (builtins.elem "distrobox-export --app mpv" bothHooks) "mpv app hook should be present in combined config")
-    (assertMsg (builtins.elem "distrobox-export --bin /usr/bin/htop --export-path ~/.local/bin" bothHooks) "htop binary hook should be present in combined config")
+    (assertMsg (builtins.elem "distrobox-export --bin /usr/bin/htop --export-path '~/.local/bin'" bothHooks) "htop binary hook should be present in combined config")
   ];
 
   allPass = builtins.all (x: x) tests;

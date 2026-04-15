@@ -61,7 +61,8 @@ in
       { programs.distrobox.containers = lib.mkMerge (map mkFeatureConfig features); }
       (lib.mkIf cfg.alias.enable {
         home.shellAliases = lib.mapAttrs' (
-          name: containerCfg: lib.nameValuePair containerCfg.alias.name "distrobox enter ${name}"
+          name: containerCfg:
+          lib.nameValuePair containerCfg.alias.name "distrobox enter ${lib.escapeShellArg name}"
         ) (lib.filterAttrs (_: c: c.alias.enable) cfg.containers);
       })
     ]
